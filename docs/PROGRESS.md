@@ -11,6 +11,15 @@ Upload `docs/PROGRESS.md`, `docs/GAME-DESIGN.md`, `docs/BUILD-PLAN.md`,
 
 (Uploading beats linking — GitHub page fetches can return stale cached copies.)
 
+## Releasing an update (important)
+
+`index.html` loads the scripts as `src/game.js?v=8` etc. **Bump that
+number (v=8 → v=9) on every release** that changes any `.js` file, and
+always upload `index.html` too. Otherwise browsers can keep an old cached
+script alongside the new page (this happened once: new index.html + old
+game.js drew two offices). If something looks broken after an update,
+first try Ctrl+Shift+R.
+
 ## How to run it
 
 Open `index.html` in a browser (double-click works, no server needed).
