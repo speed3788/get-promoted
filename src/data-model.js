@@ -35,8 +35,8 @@ const TASK_TIERS = {
   hard: {
     minValue: 30,
     maxValue: 45,
-    outerCapSeconds: 15,
-    questionsPerChain: 3,
+    outerCapSeconds: 10, // was 15 with 3 questions; scaled with the chain length
+    questionsPerChain: 2, // cut from 3: reading 3 questions took too long
     flavors: ["quarterlyCrunch", "clientCurveball"],
     // Client Curveball answer scoring (Quarterly Crunch is just correct=1/wrong=0)
     curveballScoring: {
@@ -112,9 +112,10 @@ function speedFromPass(passNumber) {
 // ---- Boosts & Sabotages --------------------------------------------------
 
 const ITEM_TIERS = {
-  common: { minPrice: 50, maxPrice: 80 },
-  uncommon: { minPrice: 120, maxPrice: 180 },
-  rare: { minPrice: 250, maxPrice: 350 },
+  // Cut from $50-80 / 120-180 / 250-350 after playtesting (see BALANCE-NOTES.md)
+  common: { minPrice: 30, maxPrice: 45 },
+  uncommon: { minPrice: 70, maxPrice: 100 },
+  rare: { minPrice: 150, maxPrice: 200 },
 };
 
 // Shop draw odds per day (Days 1-4 only; no shop after Day 5).
@@ -197,7 +198,7 @@ function createPlayer({ id, name, isBot = false }) {
     wallet: 0, // spendable balance
     careerEarnings: 0, // the actual score — never reduced by spending
 
-    inventory: [], // Boost/Sabotage item ids owned, unlimited, can't sell
+    inventory: [], // Boost/Sabotage item ids owned; duplicates allowed, each copy is used up after one day
     activeToday: [], // up to 3 item ids selected for the current day
 
     // Tracked purely for end-game accolades — see ACCOLADES above.

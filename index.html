@@ -46,13 +46,22 @@ h1,h2,h3{margin:0 0 8px}
 .err{color:#c62828;font-size:14px;min-height:1em}
 .gossip{position:fixed;z-index:20;width:220px;background:#fff;border:2px solid #4a154b;border-radius:10px;padding:10px 26px 10px 10px;font-size:14px;box-shadow:0 4px 12px #0004}
 .gossip button{position:absolute;top:2px;right:2px;width:18px;height:18px;padding:0;font-size:12px;line-height:1;border:0;background:none;cursor:pointer}
+.text{font:inherit;font-size:17px;width:100%;padding:10px;border:2px solid var(--ink);border-radius:8px;margin:4px 0 12px;background:#fff}
+.code-in{text-align:center;letter-spacing:4px;text-transform:uppercase}
+.stack{display:grid;gap:8px}
+.join{border-top:2px dashed #0003;margin-top:14px;padding-top:12px}
+.code-big{font-size:40px;font-weight:700;letter-spacing:6px;text-align:center;padding:8px;border:2px dashed var(--ink);border-radius:10px;background:#fff}
+.small{font:inherit;padding:6px 12px;margin-top:8px;border-radius:8px;border:2px solid var(--ink);background:var(--memo);cursor:pointer}
+.ready-row{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #0002}
 .timer{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden}
 .timer div{height:100%;background:var(--memo)}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="src/data-model.js"></script>
+<script src="src/net.js"></script>
 <script src="src/minigames.js"></script>
 <script src="src/game.js"></script>
 </body>

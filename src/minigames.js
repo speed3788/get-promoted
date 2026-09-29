@@ -223,7 +223,7 @@ const MINIGAMES = {
 
   // ===== Hard: 3-question chains =====
   quarterlyCrunch(task, done) {
-    const qs = [0, 1, 2].map(makeMathQ);
+    const qs = Array.from({ length: TASK_TIERS.hard.questionsPerChain }, () => makeMathQ());
     return questionChain(task, done, "📊 Quarterly Crunch", qs.map((q) => ({
       text: q.text,
       options: q.options.map((v) => ({ label: v, score: () => (v === q.answer ? 1 : 0), wrong: v !== q.answer })),
@@ -232,7 +232,7 @@ const MINIGAMES = {
 
   clientCurveball(task, done) {
     const sc = TASK_TIERS.hard.curveballScoring;
-    return questionChain(task, done, "🎯 Client Curveball", shuffle(CURVEBALLS).slice(0, 3).map((c) => ({
+    return questionChain(task, done, "🎯 Client Curveball", shuffle(CURVEBALLS).slice(0, TASK_TIERS.hard.questionsPerChain).map((c) => ({
       text: c.q,
       options: shuffle([
         { label: c.safe, score: () => sc.safe },

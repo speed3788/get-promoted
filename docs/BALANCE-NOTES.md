@@ -62,3 +62,35 @@ rather than a routine one.
 **If task payout numbers change later, re-run this simulation** — the
 accolade ranges were tuned against the current payout scale and spawn
 odds; changing either invalidates this tuning.
+
+## Hard chains cut from 3 questions to 2 (outer cap 15s → 10s)
+
+Changed because reading 3 questions took too long. Re-simulating a
+balanced day (40/40/20 spawn odds) showed Hard tasks finishing faster
+raises daily earnings ~16% (average player $163 → $189/day; the share
+of days an average player can afford a Rare item rises from ~1% to ~8%).
+Left as-is for now: items became consumable at the same time, which
+drains money faster and offsets the extra income. If Rare items start
+feeling too common in playtesting, trim Hard base pay to ~$26-39 to
+restore the old curve. Higher earnings slightly widen gaps between
+ranks, so accolades become marginally *less* able to flip standings —
+the safe direction.
+
+## Shop prices cut after playtesting ($30-45 / $70-100 / $150-200)
+
+Playtest: player could only afford ~1 item per night until Day 3, which felt
+bad with 3 active slots and consumable items. Re-simulating with slower,
+more realistic decision time (2.5s per task instead of 0.6s) reproduced
+that exactly (1.3-1.7 items/night at the old $50-80 / $120-180 / $250-350).
+Target: a player doing well buys 2-3 items by night 2. Chose to lower
+prices rather than raise task pay, because raising pay would shift Career
+Earnings and break the accolade tuning above; prices only affect Wallet.
+
+Items bought per night (nights 1-4) at the new prices:
+- Doing well: 3.0 every night
+- Playtest-like: 2.3 / 2.5 / 2.3 / 2.1
+- Struggling: 0.9 / 1.3 / 1.2 / 1.0
+
+Rejected $20-35 / $45-70 / $100-140: everyone maxed out at ~3 items
+every night, so shopping had no tension. Bots now buy up to 3 items per
+night too (they were buying 1 and would fall far behind).

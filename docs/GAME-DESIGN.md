@@ -92,8 +92,9 @@ the outer cap of 6s) — Speed drops with each extra pass.
 
 ## Hard tier — quick thinking / risk · Base $30-45
 
-A chain of 3 rapid multiple-choice questions. Outer cap ~15s for the whole
-chain. Chain **Accuracy = average of the 3 questions' scores**.
+A chain of 2 rapid multiple-choice questions (cut from 3: reading three took
+too long). Outer cap 10s for the whole chain. Chain **Accuracy = average of
+the 2 questions' scores**.
 
 **Quarterly Crunch** (math): 3 options each, deterministic.
 - Correct = 1.0, Wrong = 0
@@ -115,7 +116,8 @@ Two separate numbers per player:
 
 ## Boosts & Sabotages
 
-Bought into a permanent, unlimited **inventory** (can't sell). Before each
+Bought into an unlimited **inventory** (can't sell, duplicates allowed).
+**Items are consumable**: each one works for one day, then it's gone. Before each
 new day (including going into Day 5), each player **selects 3** from their
 inventory to be active — passive, whole-day effects only, never a
 manually-triggered one-time use.
@@ -128,9 +130,9 @@ which day it is:
 
 | Item tier | Price | Day 1 odds | Day 2 odds | Day 3 odds | Day 4 odds |
 |---|---|---|---|---|---|
-| Common | $50-80 | 70% | 55% | 35% | 20% |
-| Uncommon | $120-180 | 25% | 35% | 40% | 40% |
-| Rare | $250-350 | 5% | 10% | 25% | 40% |
+| Common | $30-45 | 70% | 55% | 35% | 20% |
+| Uncommon | $70-100 | 25% | 35% | 40% | 40% |
+| Rare | $150-200 | 5% | 10% | 25% | 40% |
 
 No duplicate items within the same day's 5-card shop.
 
@@ -295,10 +297,11 @@ player's device is the host and holds the single real copy of game state
 claims, minigame actions, purchases) to the host and just renders
 whatever the host says happened.
 
-- **Connection reliability**: direct peer-to-peer by default, falling
-  back to a free TURN relay (Open Relay Project) when a direct connection
-  fails — expected fairly often for players on different networks/cities,
-  not just an edge case, since play isn't assumed to be same-wifi only.
+- **Connection reliability**: direct peer-to-peer (STUN) by default,
+  with an optional free TURN relay (Metered's Open Relay, 20 GB/month) for
+  players on strict networks. Note: Open Relay's old shared public
+  password no longer works — each developer signs up for a free account
+  and pastes their own app name + API key into `src/net.js`.
 - **Room codes**: host generates a short, human-typeable code (e.g.
   `CORP84`), not a raw technical peer ID.
 - **State sync**: host broadcasts the entire current game state as one

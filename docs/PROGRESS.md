@@ -40,17 +40,34 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
   - You + 3 bots (Taylor, Morgan, Riley) share one live board; bots grab
     tasks too, so your options change under you
   - Night shop: 5 day-weighted cards, random price in tier range, bought
-    items go to a permanent inventory
+    items go to the inventory (consumable: used up after one day)
   - Curate screen: pick up to 3 active items; Sabotages pick a target
   - All 16 item effects work for humans and bots (see `fxFor` in game.js)
   - Slack Gossip: pop-ups every 9s, each ignored one multiplies every 4s
-  - Bots: "Average" profile, greedy shop, random curate, sabotage the
+  - Bots: "Average" profile, greedy shop (up to 3 items), random curate, sabotage the
     richest rival
   - After Day 4's shop/curate: placeholder "Friday is coming" screen
 
+- **Phase 4 — multiplayer (PeerJS)** ✅ game logic tested in two browser
+  tabs via the local pipe; the PeerJS pipe itself needs a real-internet test
+  - Menu: name, Play solo, Host a game, Join with a 6-character code
+  - Lobby: room code + copy button, seats, host starts; empty seats → bots
+  - Host-authoritative: host runs all rules; everyone renders snapshots
+  - Guests play minigames on their own screen, host scores the result
+  - Anonymity: snapshots hide rivals' items, targets, and career earnings
+  - Failed tasks return to the shared pool
+  - Bribe the Boss / Performance Review are per-player private views now
+  - Ready-up screen shows who's ready (✅ / ⏳)
+  - Guest disconnects mid-game → bot takes the seat, keeps their money
+  - Host disconnects → guests see "The host left"
+
 ## Decisions made during the build (confirm or change)
 
-- Owned items are permanent and can't be bought twice (shop shows "Owned")
+- Items are consumable (your call): locking in your 3 uses them up.
+  Duplicates can be bought; each shop card can be bought once per night
+- Hard tasks: 2 questions (your call, cut from 3), outer cap 10s
+- Shop prices cut to $30-45 / $70-100 / $150-200 after playtesting
+  (target: doing well = 2-3 items by night 2); bots buy up to 3 items
 - HR Wellness Stipend pays $25 at end of day
 - IT Fast-Track adds one extra 2-second pass to Medium tasks
 - Bribe the Boss / Performance Review edit the shared board for now
@@ -60,29 +77,44 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
 ## Code map
 
 - `src/data-model.js` — rules and numbers (tiers, odds, items, accolades)
+- `src/net.js` — transport: PeerJS (real) or BroadcastChannel (`?local=1`),
+  plus the optional Metered TURN config at the top
 - `src/minigames.js` — all 11 minigames + `runner`, `dragTo`,
   `timingClick`, `holdRelease`, `questionChain`
 - `src/game.js`
-  - Flow: `startGame` → `startDay` → `tick` → `endDay` → `openShop` →
-    `openCurate` → `startDay` (… after Day 4 → `prototypeEnd`)
-  - Effects: `fxFor(player)` builds today's modifiers; `settle()` applies
-    them to every payout (human and bot)
-  - Board: `renderDay`, `updateBoard`, `updateFloor`, `takeTask`, `claim`
-  - Bots: `botsTick`, `botPick`, `simulateBot`, `botShop`, `botCurate`
-- Dev tip: `index.html?day=10` makes each day 10 seconds for testing
+  - HOST section: `fxFor`, `settle`, `viewFor`, `startDay`, `endDay`,
+    `hostAction` (claim / result / buy / curate / start / again),
+    `onClientMessage`, `onClientLeave`, `snapshotFor`, `sync`, bots
+  - EVERYONE section: `act` (send an action), `startHosting`, `joinGame`,
+    `applySnapshot` → `render` → `renderMenu` / `renderLobby` /
+    `renderDay` / `renderNight` (summary → shop → curate → wait) / `renderEnd`
+- Dev tips: `?day=10` for 10-second days. `?local=1` to test multiplayer
+  in two tabs of one browser (needs a local web server, e.g.
+  `python3 -m http.server`, then open http://localhost:8000/?local=1)
 
-## Next: Phase 4 — networking (PeerJS)
+## How to play with friends
 
-1. Host/Join screen with a 6-character room code (see GAME-DESIGN.md)
-2. Host runs everything that exists now (board, bots, settle); clients
-   send "claim task i" and "task result" and receive the full state after
-   every change
-3. Humans replace bots seat by seat; a dropped player's seat becomes a bot
-4. Failed tasks return to the shared pool
-5. Bribe the Boss / Performance Review become per-player board views
-6. Free TURN relay fallback (Open Relay Project) for cross-network play
+1. Put the game online with GitHub Pages: repo Settings → Pages →
+   Branch: main → Save. Wait a minute; the URL appears on that page.
+2. Everyone opens that URL. One person taps Host a game and shares the code.
+3. If a friend can't connect (school/work wifi, some carriers), set up the
+   free relay: sign up at dashboard.metered.ca, create an app, and paste
+   the app name + API key into the top of `src/net.js`.
+
+## Next: Phase 5 — Day 5 Projects
+
+1. After Day 4's ready-up, go to Day 5 instead of `phase = "end"`
+2. Boss intro screen, then 4 shared Projects (Medium, Medium, Hard, Hard):
+   every player gets the SAME task at the same time (host sets
+   `currentTask` for everyone; bots simulate it)
+3. Finishing early: peek at rivals' progress while waiting
+4. Time bonus: +1% per second saved under 60s, applied to the 4 Projects'
+   total (see GAME-DESIGN.md)
+5. Bribe the Boss / Performance Review do nothing on Day 5 (no board)
 
 ## Known gaps / TODOs
 
-- No Day 5, Boardroom, networking, or background art yet
+- No Day 5, Boardroom, or background art yet
+- PeerJS path untested on real internet (sandbox had no network)
+- Guests can't rejoin after disconnecting (by design for now)
 - Base value shown on cards; actual payout can be 0.5x-1.5x of it
