@@ -251,14 +251,14 @@ the actual rendered image once overlay code exists.
   Medium = square, Hard = triangle) alongside its color, so the strip
   reads correctly for colorblind players glancing quickly at a fast
   board. No illustration beyond the shape/color itself.
-- **Per-player badge**: combined name + Wallet in one element,
-  `[color dot] PlayerName 💰$[Wallet]`, positioned top-center within that
-  player's cubicle region. Shows **Wallet only** — Career Earnings (the
-  real score) stays hidden until the Boardroom reveal. Plays a quick
-  pop/scale animation whenever the Wallet value changes (task payout,
-  purchase).
-- **Active-turn highlight**: colored border/glow around a cubicle's full
-  region when relevant (exact trigger conditions TBD in screen flow).
+- **Per-player badge**: name + one status line, at the **bottom-center**
+  of that player's cubicle (on the floor by the chair). Originally planned
+  for the top of the cubicle, but that covered the workers' heads. Days 1-4
+  show `💰Wallet` (Career Earnings stay hidden until the Boardroom) with a
+  pop animation when it changes; Day 5 shows project progress ("Project 2
+  of 4" / "✅ all done"). Your own cubicle has a thin outline in your color.
+- **Busy glow**: a cubicle glows in its player's color while that player
+  (or bot) is working a task — shows at a glance who's busy.
 - **Task popup anchor** (mini-game modal, Slack Gossip popups): centered
   on that cubicle's monitor, roughly 35% into the quadrant's width, 40%
   into its height (monitors sit slightly left-of-center in each cubicle).

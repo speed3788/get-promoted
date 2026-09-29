@@ -61,6 +61,36 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
   - Guest disconnects mid-game → bot takes the seat, keeps their money
   - Host disconnects → guests see "The host left"
 
+- **Real-internet multiplayer test with a friend** ✅ PeerJS works
+- **Phase 5 — Day 5 Projects** ✅ (two-tab test: both players + bots
+  finish, time bonus math verified, zero errors)
+  - After Day 4's ready-up: Boss intro screen with a 4-second countdown
+  - 4 shared Projects (Medium, Medium, Hard, Hard): everyone gets the
+    SAME tasks with the SAME pay, and races through them in order
+  - Race screen: your current project + everyone's progress bars (x/4)
+  - Time bonus: +1% per second saved under the day's budget, applied to
+    the 4 projects' total, only if all 4 are finished
+  - Day ends when everyone finishes or time runs out
+  - Item effects apply (Bribe the Boss / Performance Review / AI Tokens
+    do nothing today); a guest who drops mid-race continues as a bot
+
+- **Phase 6 — the Boardroom** ✅ (two-player test: slides stay in sync,
+  human-only promotion verified, Play again returns everyone to the lobby)
+  - Host-timed slides (4.5s each): career earnings revealed → 3 accolades
+    one at a time (standings re-sort, winner highlighted) → PROMOTED stamp
+  - Accolades nobody qualifies for (stat is 0) are skipped and replaced
+  - If a bot earned the most, the top human is promoted and the screen says why
+  - **The full game loop is complete: lobby → Days 1-4 → Day 5 → Boardroom**
+
+- **Phase 7 — art and polish** ✅ (checked on 4 screen sizes, zero errors)
+  - `assets/office-full.jpg` (Boss + 4 workers) is the stage on Days 1-5;
+    `assets/office-empty.jpg` sits behind every other screen. Both
+    compressed from ~1.6 MB to ~125 KB
+  - Cubicle badges (name + wallet, or Day 5 progress), busy glow, your
+    own cubicle outlined; task strip on the Boss's desk (color + shape)
+  - Office height adapts to the screen so the whole day screen fits
+    without scrolling, from iPhone SE (375x667) to laptops
+
 ## Decisions made during the build (confirm or change)
 
 - Items are consumable (your call): locking in your 3 uses them up.
@@ -73,6 +103,8 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
 - Bribe the Boss / Performance Review edit the shared board for now
   (should become a per-player view in Phase 4)
 - Bots target the richest rival with Sabotages
+- Accolade ties: random pick among the tied players
+- Accolades with no qualifier (e.g. nobody sabotaged) are skipped and redrawn
 
 ## Code map
 
@@ -101,20 +133,15 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
    free relay: sign up at dashboard.metered.ca, create an app, and paste
    the app name + API key into the top of `src/net.js`.
 
-## Next: Phase 5 — Day 5 Projects
+## Next: Phase 8 — playtest and parked feedback
 
-1. After Day 4's ready-up, go to Day 5 instead of `phase = "end"`
-2. Boss intro screen, then 4 shared Projects (Medium, Medium, Hard, Hard):
-   every player gets the SAME task at the same time (host sets
-   `currentTask` for everyone; bots simulate it)
-3. Finishing early: peek at rivals' progress while waiting
-4. Time bonus: +1% per second saved under 60s, applied to the 4 Projects'
-   total (see GAME-DESIGN.md)
-5. Bribe the Boss / Performance Review do nothing on Day 5 (no board)
+1. Full multiplayer playtest of the complete game (all 5 days + Boardroom)
+2. More Easy minigames (players saw the same 5 too often)
+3. Bigger Hard question bank: many more Client Curveball scenarios and
+   Quarterly Crunch templates so answers can't be memorized
+4. Anything the playtest turns up
 
 ## Known gaps / TODOs
 
-- No Day 5, Boardroom, or background art yet
-- PeerJS path untested on real internet (sandbox had no network)
 - Guests can't rejoin after disconnecting (by design for now)
 - Base value shown on cards; actual payout can be 0.5x-1.5x of it

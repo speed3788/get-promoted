@@ -15,7 +15,7 @@ h1,h2,h3{margin:0 0 8px}
 .pop{display:inline-block;animation:pop .3s}
 @keyframes pop{50%{transform:scale(1.3)}}
 .board{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.task{background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:12px;text-align:left;cursor:pointer;font:inherit;min-height:100px;line-height:1.5}
+.task{background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:8px 10px;text-align:left;cursor:pointer;font:inherit;min-height:78px;line-height:1.4}
 .task:active{transform:scale(.97)}
 .shape{width:16px;height:16px;display:inline-block;vertical-align:-2px}
 .shape.easy{background:var(--easy);border-radius:50%}
@@ -53,11 +53,31 @@ h1,h2,h3{margin:0 0 8px}
 .code-big{font-size:40px;font-weight:700;letter-spacing:6px;text-align:center;padding:8px;border:2px dashed var(--ink);border-radius:10px;background:#fff}
 .small{font:inherit;padding:6px 12px;margin-top:8px;border-radius:8px;border:2px solid var(--ink);background:var(--memo);cursor:pointer}
 .ready-row{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #0002}
+.race-bar{width:90px;height:10px;border:2px solid var(--ink);border-radius:6px;overflow:hidden;background:#eee}
+.race-bar span{display:block;height:100%;background:var(--easy)}
+.accolade{text-align:center;padding:8px}
+.accolade h3{font-size:24px;margin:6px 0}
+.ready-row.hot{background:#fff3c4}
+.stamp{display:inline-block;margin:10px 0;padding:6px 18px;border:5px solid #c62828;color:#c62828;font-size:34px;font-weight:900;letter-spacing:4px;transform:rotate(-8deg);border-radius:8px;animation:stamp .5s ease-out}
+@keyframes stamp{0%{transform:rotate(-8deg) scale(2.5);opacity:0}100%{transform:rotate(-8deg) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.stamp,.pop{animation:none}}
+body.office-bg::before{content:"";position:fixed;inset:0;z-index:-1;background:#5b6478 url(assets/office-empty.jpg) center top/cover no-repeat}
+.stage{position:relative;height:clamp(240px,calc(100vh - 470px),684px);aspect-ratio:2/3;margin:0 auto;border:2px solid var(--ink);border-radius:12px;overflow:hidden;background:var(--carpet)}
+.stage img{display:block;width:100%;height:100%}
+.seat{position:absolute;border-radius:8px;transition:box-shadow .2s}
+.seat.me{box-shadow:inset 0 0 0 2px var(--c)}
+.seat.busy{box-shadow:inset 0 0 0 3px var(--c),0 0 14px 2px var(--c)}
+.badge{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);max-width:96%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  background:var(--paper);border:2px solid var(--c);border-radius:8px;padding:1px 6px;font-size:11px;line-height:1.35;text-align:center}
+.badge .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:3px}
+.strip{position:absolute;left:50%;top:26.5%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;padding:3px 7px;background:#fffdf6e6;border:2px solid var(--ink);border-radius:8px}
+.strip .shape{width:12px;height:12px}
+.strip .shape.hard{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--hard)}
 .timer{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden}
 .timer div{height:100%;background:var(--memo)}
 </style>
 </head>
-<body>
+<body class="office-bg">
 <div id="app"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="src/data-model.js"></script>

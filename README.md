@@ -12,8 +12,9 @@ or mouse.
 
 🚧 Full design locked — economy, tasks, shop, Day 5, end game, art, screen
 flow, bots, and networking (see `docs/GAME-DESIGN.md`). Ready to build.
-**Phases 1-4 built**: all 11 minigames, the nightly shop, all 16
-Boosts/Sabotages, bots, and online multiplayer with room codes. Open
+**Phases 1-7 built — the full game is playable, with art**: all 11 minigames, the
+nightly shop, all 16 Boosts/Sabotages, bots, online multiplayer with room
+codes, the Day 5 Projects race, and the Boardroom promotion ceremony. Open
 `index.html` to play solo; see `docs/PROGRESS.md` to play with friends. Progress and next steps:
 `docs/PROGRESS.md`.
 
@@ -22,6 +23,7 @@ Boosts/Sabotages, bots, and online multiplayer with room codes. Open
 ```
 get-promoted/
 ├── README.md                  this file
+├── assets/                    office background images
 ├── docs/
 │   ├── GAME-DESIGN.md          the full design — source of truth
 │   ├── BALANCE-NOTES.md        why the numbers are what they are (simulation-backed)
