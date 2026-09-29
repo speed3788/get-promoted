@@ -12,8 +12,8 @@ or mouse.
 
 🚧 Full design locked — economy, tasks, shop, Day 5, end game, art, screen
 flow, bots, and networking (see `docs/GAME-DESIGN.md`). Ready to build.
-**Phases 1-2 built**: playable single-player prototype with all 11
-minigames — open `index.html` to play. Progress and next steps:
+**Phases 1-3 built**: you plus 3 bots, all 11 minigames, the nightly
+shop, and all 16 Boosts/Sabotages — open `index.html` to play. Progress and next steps:
 `docs/PROGRESS.md`.
 
 ## Project structure
@@ -29,7 +29,8 @@ get-promoted/
 │   └── BACKLOG.md              the one thing still undecided
 ├── src/
 │   ├── data-model.js           rules and numbers (tasks, shop, accolades)
-│   └── game.js                 the game: day loop, board, all minigames
+│   ├── minigames.js            all 11 minigames
+│   └── game.js                 day loop, board, shop, item effects, bots
 └── index.html                  open this to play
 ```
 

@@ -35,28 +35,54 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
     (Safe 0.8 / Risky 50-50 1.5 or 0.2 / Wrong 0, 7 scenarios)
   - Stats tracked: tasks, mistakes (per wrong answer + timeouts), risky calls
 
-## Code map (src/game.js)
+- **Phase 3 — shop, inventory, curate, effects, bots** ✅ (browser-tested
+  over a full 4-day week, zero errors)
+  - You + 3 bots (Taylor, Morgan, Riley) share one live board; bots grab
+    tasks too, so your options change under you
+  - Night shop: 5 day-weighted cards, random price in tier range, bought
+    items go to a permanent inventory
+  - Curate screen: pick up to 3 active items; Sabotages pick a target
+  - All 16 item effects work for humans and bots (see `fxFor` in game.js)
+  - Slack Gossip: pop-ups every 9s, each ignored one multiplies every 4s
+  - Bots: "Average" profile, greedy shop, random curate, sabotage the
+    richest rival
+  - After Day 4's shop/curate: placeholder "Friday is coming" screen
 
-- Flow: `titleScreen` → `startGame` → `startDay` → `tick` → `endDay`
-- Board: `renderBoard`, `claim`, `finishTask`
-- Helpers: `runner` (outer-cap timer, every minigame uses it), `dragTo`,
-  `spawnItems`, `openOverlay`
-- `MINIGAMES` object: one entry per flavor id from `data-model.js`
+## Decisions made during the build (confirm or change)
 
-## Next: Phase 3 — shop, inventory, day loop, bot
+- Owned items are permanent and can't be bought twice (shop shows "Owned")
+- HR Wellness Stipend pays $25 at end of day
+- IT Fast-Track adds one extra 2-second pass to Medium tasks
+- Bribe the Boss / Performance Review edit the shared board for now
+  (should become a per-player view in Phase 4)
+- Bots target the richest rival with Sabotages
 
-1. After each of Days 1-4: shop screen, 5 cards
-   via `drawShopCards(day)`, buy with Wallet (random price in tier range),
-   items go to `player.inventory` (unlimited, no selling)
-2. Curate screen: pick up to 3 from inventory → `player.activeToday`
-3. Apply effects during the next day (see Boosts/Sabotages tables in
-   GAME-DESIGN.md) — Sabotages need a target picker
-4. Bot: 3 bot players using the "Average" profile (simulated task results
-   on a timer, greedy shop buying, random curation); they need visible
-   Wallets (cubicle badges come in Phase 7, a simple list is fine now)
+## Code map
+
+- `src/data-model.js` — rules and numbers (tiers, odds, items, accolades)
+- `src/minigames.js` — all 11 minigames + `runner`, `dragTo`,
+  `timingClick`, `holdRelease`, `questionChain`
+- `src/game.js`
+  - Flow: `startGame` → `startDay` → `tick` → `endDay` → `openShop` →
+    `openCurate` → `startDay` (… after Day 4 → `prototypeEnd`)
+  - Effects: `fxFor(player)` builds today's modifiers; `settle()` applies
+    them to every payout (human and bot)
+  - Board: `renderDay`, `updateBoard`, `updateFloor`, `takeTask`, `claim`
+  - Bots: `botsTick`, `botPick`, `simulateBot`, `botShop`, `botCurate`
+- Dev tip: `index.html?day=10` makes each day 10 seconds for testing
+
+## Next: Phase 4 — networking (PeerJS)
+
+1. Host/Join screen with a 6-character room code (see GAME-DESIGN.md)
+2. Host runs everything that exists now (board, bots, settle); clients
+   send "claim task i" and "task result" and receive the full state after
+   every change
+3. Humans replace bots seat by seat; a dropped player's seat becomes a bot
+4. Failed tasks return to the shared pool
+5. Bribe the Boss / Performance Review become per-player board views
+6. Free TURN relay fallback (Open Relay Project) for cross-network play
 
 ## Known gaps / TODOs
 
-- Failed tasks are discarded; in multiplayer they return to the pool (Phase 4)
-- No shop, bots, Day 5, Boardroom, networking, or background art yet
-- Base value shown on cards; actual payout can be 0.5×–1.5× of it
+- No Day 5, Boardroom, networking, or background art yet
+- Base value shown on cards; actual payout can be 0.5x-1.5x of it
