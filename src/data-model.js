@@ -226,7 +226,6 @@ function applyTaskResult(player, task) {
   player.stats.speedCount += 1;
   player.stats.accuracySum += task.accuracy;
   player.stats.accuracyCount += 1;
-  if (task.accuracy === 0) player.stats.mistakesCount += 1;
   return payout;
 }
 
@@ -242,7 +241,7 @@ function createGameState({ hostPlayerId, players }) {
   };
 }
 
-module.exports = {
+if (typeof module !== "undefined") module.exports = {
   TASK_TIERS,
   TASK_SPAWN_ODDS_BY_DAY,
   ITEM_TIERS,

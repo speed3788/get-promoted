@@ -12,8 +12,9 @@ or mouse.
 
 🚧 Full design locked — economy, tasks, shop, Day 5, end game, art, screen
 flow, bots, and networking (see `docs/GAME-DESIGN.md`). Ready to build.
-See `docs/BUILD-PLAN.md` for the phased plan (~16-22 days) and
-`docs/BACKLOG.md` for the one remaining open detail.
+**Phases 1-2 built**: playable single-player prototype with all 11
+minigames — open `index.html` to play. Progress and next steps:
+`docs/PROGRESS.md`.
 
 ## Project structure
 
@@ -24,10 +25,12 @@ get-promoted/
 │   ├── GAME-DESIGN.md          the full design — source of truth
 │   ├── BALANCE-NOTES.md        why the numbers are what they are (simulation-backed)
 │   ├── BUILD-PLAN.md           the phased build plan
+│   ├── PROGRESS.md             what's built, what's next — read when resuming
 │   └── BACKLOG.md              the one thing still undecided
 ├── src/
-│   └── data-model.js           JS shapes for Task/Player/GameState/Shop/Accolades
-└── index.html                  (not yet started) the game itself
+│   ├── data-model.js           rules and numbers (tasks, shop, accolades)
+│   └── game.js                 the game: day loop, board, all minigames
+└── index.html                  open this to play
 ```
 
 ## Read this first
