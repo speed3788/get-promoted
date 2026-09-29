@@ -220,13 +220,13 @@ everywhere. Boost/Sabotage shop cards use a tier-colored border
 (gold/silver/bronze) plus a generic icon (up-arrow style for Boosts,
 down-arrow/target style for Sabotages) rather than 16 unique illustrations.
 
-**Two background images total**: the empty office (no characters) is the
-shared backdrop for every non-gameplay screen — Host/Join, Ready Up, Shop,
-and the Boardroom ending — with UI cards sitting on solid opaque surfaces
-on top (the office art shows around the edges as atmosphere, doesn't need
-a dimming overlay). The composited version (office + Boss + 4 seated
-workers) is used only for the live Task screen and Day 5 Projects, where
-the actual gameplay and cubicle overlays happen.
+**Two background images total, and the office is always the world.** The
+office is a fixed backdrop filling the screen height (full image visible,
+centered; on phones the carpet color continues below it). Every screen
+floats on top of it: menus, lobby, shop, and Boardroom over the empty
+office; Days 1-5 over the office with the Boss and 4 seated workers. On
+live days a compact timer bar floats over the top wall and the task panel
+floats at the bottom over the lower cubicles. The Boss is never covered.
 
 ### Layout regions (percentages of the composited image)
 
@@ -251,9 +251,9 @@ the actual rendered image once overlay code exists.
   Medium = square, Hard = triangle) alongside its color, so the strip
   reads correctly for colorblind players glancing quickly at a fast
   board. No illustration beyond the shape/color itself.
-- **Per-player badge**: name + one status line, at the **bottom-center**
-  of that player's cubicle (on the floor by the chair). Originally planned
-  for the top of the cubicle, but that covered the workers' heads. Days 1-4
+- **Per-player badge**: name + one status line, centered on the **top edge
+  of that player's cubicle wall** (just above the worker's head). Placed
+  there so the floating task panel at the bottom never hides it. Days 1-4
   show `💰Wallet` (Career Earnings stay hidden until the Boardroom) with a
   pop animation when it changes; Day 5 shows project progress ("Project 2
   of 4" / "✅ all done"). Your own cubicle has a thin outline in your color.

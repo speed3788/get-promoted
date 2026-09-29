@@ -91,6 +91,14 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
   - Office height adapts to the screen so the whole day screen fits
     without scrolling, from iPhone SE (375x667) to laptops
 
+- **Layout fix after playtest** ✅ the office is now a fixed full-height
+  backdrop behind every screen (was cut off on desktop); on live days the
+  timer floats over the top wall and tasks float over the lower cubicles.
+  Verified on iPhone SE, iPhone 14, and a 1310x1340 desktop: Boss never
+  covered, all 4 badges visible, nothing needs scrolling
+  - Code: `#scene` in index.html + `setScene(live)` / `hudHtml()` /
+    `updateStage()` in game.js
+
 ## Decisions made during the build (confirm or change)
 
 - Items are consumable (your call): locking in your 3 uses them up.

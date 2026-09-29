@@ -606,7 +606,7 @@ function applySnapshot(s) {
 function render() {
   if (!snap || !player) return;
   const live = snap.phase === "task" || snap.phase === "projects";
-  document.body.className = live ? "" : "office-bg"; // empty office behind menus; live days draw their own office
+  setScene(live);
   if (!live) { cancelMinigame(); stopGossip(); }
   if (snap.phase === "lobby") renderLobby();
   else if (snap.phase === "task") renderDay();
@@ -645,11 +645,13 @@ function tick() {
 
 // ---- Menu / lobby ------------------------------------------------------------------------------
 function renderStatus(msg) {
+  setScene(false);
   screenKey = "status";
   app.innerHTML = `<div class="card"><h2>Get Promoted!</h2><p>${esc(msg)}</p></div>`;
 }
 
 function renderMenu(err = "") {
+  setScene(false);
   screenKey = "menu";
   const saved = localStorage.getItem("gp-name") || "";
   app.innerHTML = `<div class="card"><h1>Get Promoted!</h1>
@@ -691,6 +693,7 @@ function renderLobby() {
 }
 
 function renderGone() {
+  setScene(false);
   cancelMinigame();
   stopGossip();
   snap = null;
@@ -705,12 +708,10 @@ function renderDay() {
   if (screenKey !== key) {
     screenKey = key;
     const active = (player.activeToday || []).map((a) => ITEM_INFO[a.id][0]).join(", ");
-    app.innerHTML = `<div class="card hud"><span>Day ${snap.day} of 5</span><span id="timeLeft">${DAY_SECONDS}s</span></div>
-      <div class="timer"><div id="timeBar" style="width:100%"></div></div>
-      ${stageHtml()}
+    app.innerHTML = hudHtml(`Day ${snap.day} of 5`) + `<div class="panel">
       ${active ? `<div class="note-line">Active today: ${active}</div>` : ""}
       <div class="card"><b>Pick a task</b><div class="muted" id="msg"></div></div>
-      <div class="board" id="board"></div>`;
+      <div class="board" id="board"></div></div>`;
     startedTaskId = null;
     if (player.fx?.gossip) startGossip();
   }
@@ -725,9 +726,21 @@ function renderDay() {
   maybeStartMinigame();
 }
 
-function stageHtml() {
-  return `<div class="stage"><img src="assets/office-full.jpg" alt="The office: the boss at his desk and four coworkers in cubicles">
-    <div class="strip" id="strip" aria-label="Tasks waiting on the boss's desk"></div><div id="seats"></div></div>`;
+/**
+ * The office (#scene in index.html) is a fixed backdrop behind every screen. Live days
+ * show the Boss + workers with player badges on it; every other screen shows the empty office.
+ */
+function setScene(live) {
+  document.body.classList.toggle("live", live);
+  const img = document.getElementById("sceneImg"), src = live ? "assets/office-full.jpg" : "assets/office-empty.jpg";
+  if (!img.getAttribute("src").endsWith(src)) img.setAttribute("src", src);
+  if (!live) { document.getElementById("seats").innerHTML = ""; document.getElementById("strip").hidden = true; }
+}
+
+/** Compact top bar that floats over the office wall (kept short so the Boss stays visible). */
+function hudHtml(title) {
+  return `<div class="card hud"><div class="hud-row"><span>${title}</span><span id="timeLeft">${DAY_SECONDS}s</span></div>
+    <div class="timer"><div id="timeBar" style="width:100%"></div></div></div>`;
 }
 
 /**
@@ -786,10 +799,8 @@ function renderIntro() {
 function renderProjects() {
   if (screenKey !== "projects") {
     screenKey = "projects";
-    app.innerHTML = `<div class="card hud"><span>Day 5 of 5: Projects</span><span id="timeLeft">${DAY_SECONDS}s</span></div>
-      <div class="timer"><div id="timeBar" style="width:100%"></div></div>
-      ${stageHtml()}
-      <div class="card"><b id="projTitle"></b><div class="muted" id="msg"></div></div>`;
+    app.innerHTML = hudHtml("Day 5 of 5: Projects") + `<div class="panel">
+      <div class="card"><b id="projTitle"></b><div class="muted" id="msg"></div></div></div>`;
     startedTaskId = null;
     if (player.fx?.gossip) startGossip();
   }
