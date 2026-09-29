@@ -113,6 +113,11 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
   start below the Boss; fixed the HUD bug that showed "Day 1 of 510s" with
   no timer bar. Verified on desktop, iPhone 14, iPhone SE
 
+- **Layout pass 3 (v=10)** ✅ task panel lowered to one fixed spot (same on
+  every day); active Boosts/Sabotages moved off the panel onto tags on the
+  front of the Boss's desk (`showDeskItems()`, `#deskItems`). Checked on
+  desktop, iPhone 14, iPhone SE, small Android: no overlap with the panel
+
 ## Decisions made during the build (confirm or change)
 
 - Items are consumable (your call): locking in your 3 uses them up.

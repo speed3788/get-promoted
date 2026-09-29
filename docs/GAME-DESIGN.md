@@ -259,6 +259,12 @@ the actual rendered image once overlay code exists.
   show `💰Wallet` (Career Earnings stay hidden until the Boardroom) with a
   pop animation when it changes; Day 5 shows project progress ("Project 2
   of 4" / "✅ all done"). Your own cubicle has a thin outline in your color.
+- **Active items on the Boss's desk**: today's active Boosts/Sabotages show
+  as small tags (📈 Boost / 📉 Sabotage + name) on the front of the Boss's
+  desk, just under the task strip — only on your own screen. They sit on top
+  of the cubicle badges if the two overlap (narrow phones).
+- **Task panel position**: fixed just below the Boss's desk (about 34% of the
+  office height + 30px), the same spot every day whether or not items are active.
 - **Busy glow**: a cubicle glows in its player's color while that player
   (or bot) is working a task — shows at a glance who's busy.
 - **Task popup anchor** (mini-game modal, Slack Gossip popups): centered

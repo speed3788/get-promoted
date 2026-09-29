@@ -78,12 +78,14 @@ h1,h2,h3{margin:0 0 8px}
 body.live #app{min-height:100dvh}
 .panel{display:flex;flex-direction:column;gap:8px}
 /* The Boss area is the top ~34% of the office image; the image is min(150vw, 100dvh) tall. */
-body.live .panel{position:fixed;z-index:2;top:calc(min(150vw,100dvh)*0.34);left:50%;transform:translateX(-50%);width:min(max(456px,calc(min(100vw,66.667dvh)*0.58)),calc(100vw - 24px))}
+body.live .panel{position:fixed;z-index:2;top:calc(min(150vw,100dvh)*0.34 + 30px);left:50%;transform:translateX(-50%);width:min(max(456px,calc(min(100vw,66.667dvh)*0.58)),calc(100vw - 24px))}
 body.below-boss #app{padding-top:calc(min(150vw,100dvh)*0.34)}
 .hud{display:block;padding:8px 12px}
 .hud-row{display:flex;justify-content:space-between;font-weight:700}
 .hud .timer{margin-top:6px;background:#0001}
-.strip[hidden]{display:none}
+.strip[hidden],.desk-items[hidden]{display:none}
+.desk-items{position:absolute;z-index:3;left:50%;top:calc(26.5% + 26px);transform:translateX(-50%);width:max-content;max-width:86%;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 3px}
+.desk-items span{background:#fffdf6e6;border:1.5px solid var(--ink);border-radius:6px;padding:0 5px;font-size:10px;line-height:1.35;font-weight:700;white-space:nowrap}
 @media (max-height:700px){.panel .card{padding:8px 12px}.task{min-height:58px;padding:5px 8px;line-height:1.3}.board{gap:6px}}
 .note-line{text-shadow:0 1px 3px #000c}
 .timer{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden}
@@ -92,12 +94,12 @@ body.below-boss #app{padding-top:calc(min(150vw,100dvh)*0.34)}
 </head>
 <body>
 <div id="scene" aria-hidden="true"><div class="scene-box"><img id="sceneImg" src="assets/office-empty.jpg" alt="">
-  <div class="strip" id="strip" hidden></div><div id="seats"></div></div></div>
+  <div class="strip" id="strip" hidden></div><div class="desk-items" id="deskItems" hidden></div><div id="seats"></div></div></div>
 <div id="app"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="src/data-model.js?v=9"></script>
-<script src="src/net.js?v=9"></script>
-<script src="src/minigames.js?v=9"></script>
-<script src="src/game.js?v=9"></script>
+<script src="src/data-model.js?v=10"></script>
+<script src="src/net.js?v=10"></script>
+<script src="src/minigames.js?v=10"></script>
+<script src="src/game.js?v=10"></script>
 </body>
 </html>

@@ -709,12 +709,11 @@ function renderDay() {
   const key = "task" + snap.day;
   if (screenKey !== key) {
     screenKey = key;
-    const active = (player.activeToday || []).map((a) => ITEM_INFO[a.id][0]).join(", ");
     app.innerHTML = hudHtml(`Day ${snap.day} of 5`) + `<div class="panel">
-      ${active ? `<div class="note-line">Active today: ${active}</div>` : ""}
       <div class="card"><b>Pick a task</b><div class="muted" id="msg"></div></div>
       <div class="board" id="board"></div></div>`;
     startedTaskId = null;
+    showDeskItems();
     if (player.fx?.gossip) startGossip();
   }
   updateStage((p, pop) => `<span class="${pop ? "pop" : ""}">💰${money(p.wallet)}</span>`);
@@ -737,7 +736,14 @@ function setScene(live) {
   document.body.classList.remove("below-boss"); // menu + lobby add it back
   const img = document.getElementById("sceneImg"), src = live ? "assets/office-full.jpg" : "assets/office-empty.jpg";
   if (!img.getAttribute("src").endsWith(src)) img.setAttribute("src", src);
-  if (!live) { document.getElementById("seats").innerHTML = ""; document.getElementById("strip").hidden = true; }
+  if (!live) { document.getElementById("seats").innerHTML = ""; document.getElementById("strip").hidden = true; document.getElementById("deskItems").hidden = true; }
+}
+
+/** Today's active Boosts/Sabotages, shown as tags on the front of the Boss's desk. */
+function showDeskItems() {
+  const el = document.getElementById("deskItems"), items = player.activeToday || [];
+  el.hidden = !items.length;
+  el.innerHTML = items.map((a) => `<span>${isSabotage(a.id) ? "📉" : "📈"} ${ITEM_INFO[a.id][0]}</span>`).join("");
 }
 
 /** Compact top bar that floats over the office wall (kept short so the Boss stays visible). */
@@ -805,6 +811,7 @@ function renderProjects() {
     app.innerHTML = hudHtml("Day 5 of 5: Projects") + `<div class="panel">
       <div class="card"><b id="projTitle"></b><div class="muted" id="msg"></div></div></div>`;
     startedTaskId = null;
+    showDeskItems();
     if (player.fx?.gossip) startGossip();
   }
   const pr = player.proj, cur = snap.projects[pr.k];
