@@ -226,7 +226,9 @@ centered; on phones the carpet color continues below it). Every screen
 floats on top of it: menus, lobby, shop, and Boardroom over the empty
 office; Days 1-5 over the office with the Boss and 4 seated workers. On
 live days a compact timer bar floats over the top wall and the task panel
-floats at the bottom over the lower cubicles. The Boss is never covered.
+floats directly under the Boss's desk, over the cubicles (it may cover the
+player badges; that's fine). The first screen and Lobby cards also start
+below the Boss. The Boss is never covered.
 
 ### Layout regions (percentages of the composited image)
 
@@ -252,8 +254,8 @@ the actual rendered image once overlay code exists.
   reads correctly for colorblind players glancing quickly at a fast
   board. No illustration beyond the shape/color itself.
 - **Per-player badge**: name + one status line, centered on the **top edge
-  of that player's cubicle wall** (just above the worker's head). Placed
-  there so the floating task panel at the bottom never hides it. Days 1-4
+  of that player's cubicle wall** (just above the worker's head). The
+  task panel may cover these while choosing a task (accepted by design). Days 1-4
   show `💰Wallet` (Career Earnings stay hidden until the Boardroom) with a
   pop animation when it changes; Day 5 shows project progress ("Project 2
   of 4" / "✅ all done"). Your own cubicle has a thin outline in your color.

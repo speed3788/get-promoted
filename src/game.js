@@ -652,6 +652,7 @@ function renderStatus(msg) {
 
 function renderMenu(err = "") {
   setScene(false);
+  document.body.classList.add("below-boss"); // card starts under the Boss
   screenKey = "menu";
   const saved = localStorage.getItem("gp-name") || "";
   app.innerHTML = `<div class="card"><h1>Get Promoted!</h1>
@@ -675,6 +676,7 @@ function renderMenu(err = "") {
 }
 
 function renderLobby() {
+  document.body.classList.add("below-boss"); // card starts under the Boss
   screenKey = "lobby";
   const me = snap.hostId === myId;
   const seats = snap.players.map((p) => `<div class="chip"><span style="color:${colorOf(p.id)}">●</span> ${esc(p.name)}
@@ -732,6 +734,7 @@ function renderDay() {
  */
 function setScene(live) {
   document.body.classList.toggle("live", live);
+  document.body.classList.remove("below-boss"); // menu + lobby add it back
   const img = document.getElementById("sceneImg"), src = live ? "assets/office-full.jpg" : "assets/office-empty.jpg";
   if (!img.getAttribute("src").endsWith(src)) img.setAttribute("src", src);
   if (!live) { document.getElementById("seats").innerHTML = ""; document.getElementById("strip").hidden = true; }

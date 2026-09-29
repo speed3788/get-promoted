@@ -108,6 +108,11 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
   - Code: `#scene` in index.html + `setScene(live)` / `hudHtml()` /
     `updateStage()` in game.js
 
+- **Layout pass 2 (v=9)** ✅ task panel anchored right under the Boss's desk
+  (about 58% of the office width on desktop); first screen + Lobby cards
+  start below the Boss; fixed the HUD bug that showed "Day 1 of 510s" with
+  no timer bar. Verified on desktop, iPhone 14, iPhone SE
+
 ## Decisions made during the build (confirm or change)
 
 - Items are consumable (your call): locking in your 3 uses them up.
