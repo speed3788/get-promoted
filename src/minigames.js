@@ -463,7 +463,13 @@ const MINIGAMES = {
     const v = (x) => Math.min(92, Math.max(8, 50 + 28 * Math.sin(2 * Math.PI * (1.2 * x + p1)) + 12 * Math.sin(2 * Math.PI * (3.1 * x + p2))));
     const samples = Array.from({ length: 101 }, (_, i) => v(i / 100));
     const lo = Math.min(...samples), hi = Math.max(...samples);
-    const targets = Array.from({ length: k }, () => Math.min(Math.floor(hi / 5) * 5, Math.max(Math.ceil(lo / 5) * 5, Math.round(v(0.1 + Math.random() * 0.8) / 5) * 5)));
+    // Targets in chart-% (0-100) so judgeClose can compare apples-to-apples with v(x).
+    // The label converts them to K-dollars for display ($40K = 40% of 0-100K axis).
+    const targPct = Array.from({ length: k }, () => {
+      // pick a value the line actually crosses (within the line's range)
+      const pct = Math.round(lo + Math.random() * (hi - lo) / 5) * 5;
+      return Math.min(Math.max(pct, Math.ceil(lo / 5) * 5), Math.floor(hi / 5) * 5);
+    });
     let cur = 0, x = 0, last = performance.now(), raf;
     const accs = [];
     const run = runner(task, done, () => cancelAnimationFrame(raf));
@@ -475,7 +481,8 @@ const MINIGAMES = {
         <div class="dot" id="dot"></div></div>
       <p class="qtext" id="st"></p><button class="big" id="act">Stop</button>`);
     const dot = o.querySelector("#dot"), st = o.querySelector("#st");
-    const label = () => (st.innerHTML = `Stop ${cur + 1} of ${k}: sales hit <b>$${targets[cur]}K</b>`);
+    // targPct is a chart-percentage; display converts to K-dollars (matching the axis labels)
+    const label = () => (st.innerHTML = `Stop ${cur + 1} of ${k}: sales hit <b>$${targPct[cur]}K</b>`);
     (function frame() {
       if (run.over) return;
       const now = performance.now();
@@ -489,7 +496,8 @@ const MINIGAMES = {
     label();
     o.querySelector("#act").onpointerdown = (e) => {
       e.preventDefault();
-      const acc = judgeClose(v(x), targets[cur]);
+      // v(x) and targPct[cur] are both in chart-% (0-100) — comparable directly.
+      const acc = judgeClose(v(x), targPct[cur]);
       if (!acc) { dot.classList.add("miss"); setTimeout(() => dot.classList.remove("miss"), 250); return; }
       accs.push(acc);
       if (++cur === k) return run.win({ accuracy: accs.reduce((a, b) => a + b, 0) / k });

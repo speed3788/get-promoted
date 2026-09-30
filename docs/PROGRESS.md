@@ -312,3 +312,22 @@ Every other game's base time +3s:
 - Chart games (Hit the Quota, Budget Pie, Trend Line): base 1.5-2.5→4.5-5.5s
 - Quarterly Crunch: Easy 1.5→4.5s, Medium 2→5s, Hard 2.5→5.5s
 - Client Curveball: Easy 1.5→4.5s, Medium 2→5s, Hard 2.5→5.5s
+
+## Bug fixes (v=18)
+
+### Bug 1 — Countdown stuck at 3
+Root cause: `renderCountdown()` read `snap.countdownLeft` which only updates
+when the host sends a new snapshot. During a quiet countdown, the host sends
+exactly one snapshot (at the start), so the display never moved.
+Fix: same pattern as the day timer — store `localCountdownEnd` in
+`applySnapshot` and drive the display from `performance.now()` on every
+`tick()` call instead of waiting for host snapshots.
+
+### Bug 2 — Trend Line Stop button did nothing / game froze after timeout
+Root cause: `targets[]` stored values in K-dollars (e.g. 40 for $40K) but
+`v(x)` returns a chart-percentage (0-100). `judgeClose` compared them
+directly — the delta was always ~40+ vs the 3/8% tolerance, so every press
+was a miss forever. After the outer cap expired the task returned to the pool
+but the overlay stayed open, blocking claims → looked like the round-lockout bug.
+Fix: store targets as chart-percentages (same units as `v(x)`). Display label
+still shows "$40K" by treating the percentage as K-dollars (matching the axis).

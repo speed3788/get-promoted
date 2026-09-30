@@ -69,7 +69,7 @@ const app = document.getElementById("app");
 let snap = null;   // the snapshot I render from
 let player = null; // MY player inside snap (minigames read player.fx)
 let myId = null, isHost = false, online = false;
-let activeGame = null, startedTaskId = null, localEnd = 0, localIntroEnd = 0, localLockEnd = 0, lockTimer = null;
+let activeGame = null, startedTaskId = null, localEnd = 0, localIntroEnd = 0, localLockEnd = 0, localCountdownEnd = 0, lockTimer = null;
 let screenKey = "", nightStep = "summary", prevWallets = {}, localReviewEnd = 0;
 // Host only
 let state = null, dayEndsAt = 0, nextId = 1, introEndsAt = 0, projectsStart = 0, dayStartAt = 0, intSeq = 0;
@@ -778,6 +778,7 @@ function applySnapshot(s) {
   checkFailBubbles();
   if (s.phase === "task" || s.phase === "projects") localEnd = performance.now() + s.timeLeft * 1000;
   if (s.phase === "projectsIntro") localIntroEnd = performance.now() + s.introLeft * 1000;
+  if (s.phase === "countdown" && s.countdownLeft > 0) localCountdownEnd = performance.now() + s.countdownLeft * 1000;
   render();
 }
 
@@ -819,6 +820,7 @@ function updateLockScreen() {
 /** Countdown for everyone; the host also runs bots and ends the day. */
 function tick() {
   updateLockScreen();
+  if (snap?.phase === "countdown") renderCountdown(); // ticks the number on its own without needing a host snapshot
   if (snap?.phase === "projectsIntro") {
     const el = document.getElementById("introCount");
     if (el) el.textContent = Math.max(1, Math.ceil((localIntroEnd - performance.now()) / 1000));
@@ -963,14 +965,14 @@ function showDeskItems() {
 }
 
 function renderCountdown() {
-  if (screenKey === "countdown") {
-    const n = Math.max(1, Math.ceil(snap.countdownLeft));
-    const el = document.getElementById("cdnum");
-    if (el) el.textContent = n;
-    return;
+  if (screenKey !== "countdown") {
+    screenKey = "countdown";
+    app.innerHTML = `<div class="cdbox"><div class="cdnum" id="cdnum">3</div><div class="cdlabel">Get ready!</div></div>`;
   }
-  screenKey = "countdown";
-  app.innerHTML = `<div class="cdbox"><div class="cdnum" id="cdnum">3</div><div class="cdlabel">Get ready!</div></div>`;
+  // Update the number on every render() call — driven by localCountdownEnd so it
+  // ticks smoothly even when the host sends no new snapshots during the quiet countdown.
+  const el = document.getElementById("cdnum");
+  if (el) el.textContent = Math.max(1, Math.ceil((localCountdownEnd - performance.now()) / 1000));
 }
 
 /** 📋 Performance Review: red banner with a countdown, REVIEW stamps on the task cards. */
