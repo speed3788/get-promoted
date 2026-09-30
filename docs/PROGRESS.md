@@ -363,3 +363,39 @@ Icon reflects state (🔇 / 🔉 / 🔊). Volume 0 pauses playback; dragging up 
 (`gp-muted`, `gp-volume`). On touch devices the slider is always visible; on
 desktop it expands on hover or when the speaker is tapped, then auto-collapses.
 It's a per-player client-side setting — it does not affect other players.
+
+## Networking reliability (v=26)
+
+**Problem:** a player in Portugal got "Couldn't reach the matchmaking server"
+when hosting. Root cause is NOT the player's internet — the free public PeerJS
+cloud signalling server (0.peerjs.com) is widely reported as unstable and
+overloaded; the standard advice in the PeerJS issue tracker is to run your own.
+
+Note: signalling servers only swap room codes for connection details. Once two
+players are connected, all game traffic is peer-to-peer and never touches them.
+
+Changes in `src/net.js`:
+- `SIGNAL_SERVERS`: a list of servers tried in order (PeerJS cloud → community
+  mirror peerjs.92k.de → explicit 0.peerjs.com host), instead of one.
+- `tryPeer()` gives each server a 7s hard timeout (PeerJS can otherwise hang
+  indefinitely), `openPeer()` walks the list until one answers.
+- "unavailable-id" / "peer-unavailable" short-circuit the walk — those are real
+  answers (code taken / room not found), not server failures.
+- Host auto-reconnects to signalling if it drops mid-game, so late joiners still
+  work; existing peer connections are unaffected either way.
+- Added a third STUN server.
+
+In `src/game.js`: `netErrorMessage()` maps each failure to an actionable
+message (server down vs wrong code vs unsupported browser) and the status
+screen reports which server it's trying. Join timeout 10s → 30s to allow the walk.
+
+**NOT verified end-to-end** — this sandbox has no network access, so real
+cross-country connections couldn't be tested. Logic and fallbacks were tested
+locally via the ?local=1 BroadcastChannel path.
+
+**If it still fails, the permanent fix is your own signalling server** (~10 min,
+free tier works): deploy https://github.com/peers/peerjs-server to Render/Fly/
+Railway, then put it FIRST in SIGNAL_SERVERS:
+  { host: "your-app.onrender.com", port: 443, secure: true, path: "/" }
+Also consider filling in METERED_APP / METERED_API_KEY at the top of net.js for
+a TURN relay (free 20GB/mo), which helps players behind strict NATs connect.

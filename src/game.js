@@ -727,6 +727,23 @@ function makeCode() {
   return Array.from({ length: 6 }, () => A[Math.floor(Math.random() * A.length)]).join("");
 }
 
+/**
+ * Turn a PeerJS error into something a player can act on. The free public matchmaking
+ * servers are frequently down, so say that plainly rather than blaming their internet.
+ */
+function netErrorMessage(e, mode) {
+  const t = e?.type;
+  if (t === "peer-unavailable") return "Couldn't find that room. Check the code, and make sure the host is still on the lobby screen.";
+  if (t === "browser-incompatible") return "This browser doesn't support online play. Try Chrome, Edge, Safari or Firefox.";
+  if (t === "offline") return "The networking library didn't load. Refresh the page and try again.";
+  if (t === "ssl-unavailable" || t === "server-error" || t === "network" || !t) {
+    return mode === "host"
+      ? "The free matchmaking servers are all unreachable right now (they go down fairly often). Wait a minute and try again — or play solo vs bots in the meantime."
+      : "Couldn't reach the matchmaking servers — they're free and go down fairly often. Wait a minute and try again, or ask the host to re-share the code.";
+  }
+  return `Connection problem (${t}). Wait a minute and try again.`;
+}
+
 async function startHosting(name, withNet) {
   isHost = true;
   myId = "host";
@@ -738,13 +755,14 @@ async function startHosting(name, withNet) {
   for (let tries = 0; ; tries++) {
     const code = makeCode();
     try {
-      await Net.host(code, { onMessage: onClientMessage, onLeave: onClientLeave });
+      await Net.host(code, { onMessage: onClientMessage, onLeave: onClientLeave },
+        (i) => renderStatus(i === 0 ? "Setting up your room…" : `Matchmaking server ${i} didn't answer — trying another…`));
       state.code = code;
       break;
     } catch (e) {
       if (e.type === "unavailable-id" && tries < 5) continue; // code already taken, roll another
       isHost = false;
-      return renderMenu("Couldn't reach the matchmaking server. Check your internet and try again.");
+      return renderMenu(netErrorMessage(e, "host"));
     }
   }
   sync();
@@ -755,7 +773,7 @@ async function joinGame(name, code) {
   online = true;
   renderStatus("Connecting…");
   const fail = (msg) => { clearTimeout(timer); snap = null; renderMenu(msg); };
-  const timer = setTimeout(() => { if (!snap) fail("Couldn't find that room. Check the code and try again."); }, 10000);
+  const timer = setTimeout(() => { if (!snap) fail("Still no answer. The matchmaking servers may be down — wait a minute and try again."); }, 30000);
   try {
     myId = await Net.join(code, {
       onMessage: (m) => {
@@ -763,11 +781,10 @@ async function joinGame(name, code) {
         else if (m?.t === "full") fail("That game is full or already started.");
       },
       onClose: () => { if (snap) renderGone(); },
-    });
+    }, (i) => renderStatus(i === 0 ? "Connecting…" : `Matchmaking server ${i} didn't answer — trying another…`));
     Net.toHost({ t: "hello", name });
   } catch (e) {
-    fail(e.type === "peer-unavailable" ? "Couldn't find that room. Check the code and try again."
-      : "Couldn't connect. Check your internet and try again.");
+    fail(netErrorMessage(e, "join"));
   }
 }
 
