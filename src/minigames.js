@@ -456,56 +456,6 @@ const MINIGAMES = {
     return run;
   },
 
-  // ===== 📈 Trend Line: CLICK to stop a dot riding a bumpy sales line at the target value =====
-  trendLine(task, done) {
-    const k = task.workload, tier = task.tier, speed = tier === "hard" ? 0.3 : 0.22, labelEvery = tier === "hard" ? 20 : 10;
-    const p1 = Math.random(), p2 = Math.random();
-    const v = (x) => Math.min(92, Math.max(8, 50 + 28 * Math.sin(2 * Math.PI * (1.2 * x + p1)) + 12 * Math.sin(2 * Math.PI * (3.1 * x + p2))));
-    const samples = Array.from({ length: 101 }, (_, i) => v(i / 100));
-    const lo = Math.min(...samples), hi = Math.max(...samples);
-    // Targets in chart-% (0-100) so judgeClose can compare apples-to-apples with v(x).
-    // The label converts them to K-dollars for display ($40K = 40% of 0-100K axis).
-    const targPct = Array.from({ length: k }, () => {
-      // pick a value the line actually crosses (within the line's range)
-      const pct = Math.round(lo + Math.random() * (hi - lo) / 5) * 5;
-      return Math.min(Math.max(pct, Math.ceil(lo / 5) * 5), Math.floor(hi / 5) * 5);
-    });
-    let cur = 0, x = 0, last = performance.now(), raf;
-    const accs = [];
-    const run = runner(task, done, () => cancelAnimationFrame(raf));
-    const path = samples.map((y, i) => `${i},${100 - y}`).join(" ");
-    const grid = [...Array(100 / labelEvery + 1).keys()].map((i) => i * labelEvery);
-    const o = openOverlay(`<h3>📈 Trend Line</h3><p class="muted">Stop the dot when sales hit the target. Any crossing counts.</p>
-      <div class="chart">${grid.map((g) => `<div class="gridline" style="bottom:${g}%"><span>$${g}K</span></div>`).join("")}
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="trend"><polyline points="${path}" /></svg>
-        <div class="dot" id="dot"></div></div>
-      <p class="qtext" id="st"></p><button class="big" id="act">Stop</button>`);
-    const dot = o.querySelector("#dot"), st = o.querySelector("#st");
-    // targPct is a chart-percentage; display converts to K-dollars (matching the axis labels)
-    const label = () => (st.innerHTML = `Stop ${cur + 1} of ${k}: sales hit <b>$${targPct[cur]}K</b>`);
-    (function frame() {
-      if (run.over) return;
-      const now = performance.now();
-      x += ((now - last) / 1000) * speed;
-      last = now;
-      if (x > 1) x -= 1; // loops back to January
-      dot.style.left = x * 100 + "%";
-      dot.style.bottom = v(x) + "%";
-      raf = requestAnimationFrame(frame);
-    })();
-    label();
-    o.querySelector("#act").onpointerdown = (e) => {
-      e.preventDefault();
-      // v(x) and targPct[cur] are both in chart-% (0-100) — comparable directly.
-      const acc = judgeClose(v(x), targPct[cur]);
-      if (!acc) { dot.classList.add("miss"); setTimeout(() => dot.classList.remove("miss"), 250); return; }
-      accs.push(acc);
-      if (++cur === k) return run.win({ accuracy: accs.reduce((a, b) => a + b, 0) / k });
-      label();
-    };
-    return run;
-  },
-
   // ===== 🧮 Quarterly Crunch: generated math. M/H: a wrong answer = Boss penalty =====
   quarterlyCrunch(task, done) {
     const qs = Array.from({ length: task.workload }, () => makeMathQ(task.tier));

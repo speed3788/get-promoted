@@ -29,7 +29,6 @@ const LADDER = {
   // chart games (replace the 4 old timing games)
   hitTheQuota:     { easy: { wl: [1, 2], t: [4.5, 2.2] },   medium: { wl: [2, 3], t: [5, 2.2] },   hard: { wl: [3, 4], t: [5.5, 2.2] } },
   budgetPie:       { easy: { wl: [1, 2], t: [4.5, 2.4] },   medium: { wl: [2, 3], t: [5, 2.4] },   hard: { wl: [3, 4], t: [5.5, 2.2] } },
-  trendLine:       {                                         medium: { wl: [2, 3], t: [5, 2.5] },   hard: { wl: [3, 4], t: [5.5, 2.3] } },
   // question games
   quarterlyCrunch: { easy: { wl: [1, 2], t: [4.5, 3] },     medium: { wl: [2, 2], t: [5, 3], penalty: "boss" },
                      hard: { wl: [2, 2], t: [5.5, 3.5], penalty: "boss" } },
