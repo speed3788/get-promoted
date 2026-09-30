@@ -20,21 +20,21 @@ const LOCKOUT_SECONDS = 4;
 const LADDER = {
   // reflex games
   staplerFrenzy:   { easy: { wl: [10, 14], t: [1, 0.25] },  medium: { wl: [22, 30], t: [1.5, 0.25] } },
-  coverYourTracks: { easy: { wl: [3, 5], t: [1, 0.9] },     medium: { wl: [6, 8], t: [1.5, 0.8], penalty: "hr" },
-                     hard: { wl: [7, 9], t: [1.5, 1.0], penalty: "hr" } },
-  inboxZeroRush:   { easy: { wl: [4, 6], t: [1, 0.6] },     medium: { wl: [6, 8], t: [2, 0.6], penalty: "hr" },
-                     hard: { wl: [8, 10], t: [2.5, 0.9], penalty: "hr" } },
-  postItPanic:     { easy: { wl: [5, 7], t: [1, 0.4] },     medium: { wl: [9, 12], t: [1.5, 0.4], penalty: "hr" } },
+  coverYourTracks: { easy: { wl: [3, 5], t: [4, 0.9] },     medium: { wl: [6, 8], t: [4.5, 0.8], penalty: "hr" },
+                     hard: { wl: [7, 9], t: [4.5, 1.0], penalty: "hr" } },
+  inboxZeroRush:   { easy: { wl: [4, 6], t: [4, 0.6] },     medium: { wl: [6, 8], t: [5, 0.6], penalty: "hr" },
+                     hard: { wl: [8, 10], t: [5.5, 0.9], penalty: "hr" } },
+  postItPanic:     { easy: { wl: [5, 7], t: [4, 0.4] },     medium: { wl: [9, 12], t: [4.5, 0.4], penalty: "hr" } },
   copierMeltdown:  { easy: { wl: [4, 6], t: [1, 1.0] },     medium: { wl: [7, 9], t: [1.5, 0.8] } },
   // chart games (replace the 4 old timing games)
-  hitTheQuota:     { easy: { wl: [1, 2], t: [1.5, 2.2] },   medium: { wl: [2, 3], t: [2, 2.2] },   hard: { wl: [3, 4], t: [2.5, 2.2] } },
-  budgetPie:       { easy: { wl: [1, 2], t: [1.5, 2.4] },   medium: { wl: [2, 3], t: [2, 2.4] },   hard: { wl: [3, 4], t: [2.5, 2.2] } },
-  trendLine:       {                                         medium: { wl: [2, 3], t: [2, 2.5] },   hard: { wl: [3, 4], t: [2.5, 2.3] } },
+  hitTheQuota:     { easy: { wl: [1, 2], t: [4.5, 2.2] },   medium: { wl: [2, 3], t: [5, 2.2] },   hard: { wl: [3, 4], t: [5.5, 2.2] } },
+  budgetPie:       { easy: { wl: [1, 2], t: [4.5, 2.4] },   medium: { wl: [2, 3], t: [5, 2.4] },   hard: { wl: [3, 4], t: [5.5, 2.2] } },
+  trendLine:       {                                         medium: { wl: [2, 3], t: [5, 2.5] },   hard: { wl: [3, 4], t: [5.5, 2.3] } },
   // question games
-  quarterlyCrunch: { easy: { wl: [1, 2], t: [1.5, 3] },     medium: { wl: [2, 2], t: [2, 3], penalty: "boss" },
-                     hard: { wl: [2, 2], t: [2.5, 3.5], penalty: "boss" } },
-  clientCurveball: { easy: { wl: [1, 1], t: [1.5, 4], flatPay: 6.5 }, medium: { wl: [1, 2], t: [2, 4], penalty: "boss" },
-                     hard: { wl: [2, 2], t: [2.5, 4.5], penalty: "boss" } },
+  quarterlyCrunch: { easy: { wl: [1, 2], t: [4.5, 3] },     medium: { wl: [2, 2], t: [5, 3], penalty: "boss" },
+                     hard: { wl: [2, 2], t: [5.5, 3.5], penalty: "boss" } },
+  clientCurveball: { easy: { wl: [1, 1], t: [4.5, 4], flatPay: 6.5 }, medium: { wl: [1, 2], t: [5, 4], penalty: "boss" },
+                     hard: { wl: [2, 2], t: [5.5, 4.5], penalty: "boss" } },
 };
 
 // Client Curveball scoring: Safe 0.8 guaranteed; Risky a coin flip (+EV on purpose)

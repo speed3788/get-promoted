@@ -280,3 +280,35 @@ everyone, Boardroom quips (winner / 4th / bot-win banks), rewrite GAME-DESIGN.md
 - Real playtest of v2 with friends, especially the chart games' speeds and
   the Hard lockout rate (both are simulation estimates).
 - Anything the playtest surfaces goes into docs/BACKLOG.md first.
+
+## Bug fix + three improvements (v=17)
+
+### Bug: whole-round lockout (unreproducible but real)
+Root cause: `applySnapshot` used `Math.max` when setting `localLockEnd`, so a
+stale client-side timer from a previous penalty could never be cleared by a
+host snapshot that said `lockLeft=0`. Also: `clearedInts` was never cleared
+between days, letting orphaned interrupt IDs accumulate.
+
+Fixes:
+1. `applySnapshot`: changed `localLockEnd = Math.max(...)` → `localLockEnd =
+   (player?.lockLeft > 0) ? ... : 0`. Host is authoritative; if it says
+   zero, the client respects it.
+2. `applySnapshot`: on a phase change (`prevPhase !== s.phase`), reset
+   `localLockEnd = 0` and `clearedInts.clear()`.
+3. `endDay` (host): set `p.lockUntil = 0` for every player so host-side
+   lockout state also can't bleed between days.
+
+### Day 1 countdown (3 seconds)
+- New `state.phase = "countdown"` before Day 1 tasks appear. Host sets it,
+  transitions to "task" after 3.1s (tick also acts as a safety fallback).
+- `renderCountdown()` renders a big number over the office.
+- Skipped in dev mode (`?day=N`), since countdown would be annoying during testing.
+
+### +3 seconds on all non-mashing games
+Stapler Frenzy and Copier Meltdown unchanged (button mashing, nothing to read).
+Every other game's base time +3s:
+- Cover Your Tracks, Post-it Panic: Easy 1→4s, Medium 1.5→4.5s, Hard 1.5→4.5s
+- Inbox Zero Rush: Easy 1→4s, Medium 2→5s, Hard 2.5→5.5s
+- Chart games (Hit the Quota, Budget Pie, Trend Line): base 1.5-2.5→4.5-5.5s
+- Quarterly Crunch: Easy 1.5→4.5s, Medium 2→5s, Hard 2.5→5.5s
+- Client Curveball: Easy 1.5→4.5s, Medium 2→5s, Hard 2.5→5.5s

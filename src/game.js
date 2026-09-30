@@ -10,6 +10,7 @@
  */
 const PARAMS = new URLSearchParams(location.search);
 const DEV_DAY = +PARAMS.get("day") || 0; // dev only: force every day's length (e.g. ?day=10)
+const DEV_ZERO_DELAY = !!DEV_DAY; // skip the Day 1 countdown in dev mode
 // Host-chosen pace for Days 1-4 (named as a pace, not a difficulty). Day 5 is always 60s.
 const PACES = { frantic: ["🐇 Frantic", 60], standard: ["🚶 Standard", 90], relaxed: ["☕ Relaxed", 120] };
 const PROJECT_SECONDS = DEV_DAY || 60;
@@ -294,6 +295,17 @@ function fillBots() {
 }
 
 function startDay(day) {
+  if (!DEV_ZERO_DELAY && day === 1) {
+    state.day = 1;
+    state.phase = "countdown";
+    state.countdownEndsAt = performance.now() + 3000;
+    sync();
+    setTimeout(() => { if (state.phase === "countdown") doStartDay(1); }, 3100);
+    return;
+  }
+  doStartDay(day);
+}
+function doStartDay(day) {
   state.day = day;
   state.phase = "task";
   const now = performance.now();
@@ -323,6 +335,7 @@ function endDay() {
   });
   state.players.forEach((p) => {
     p.interrupt = null;
+    p.lockUntil = 0; // clear leftover penalty lockout from the previous day on the host
     if (p.fx.overtime) { // ⏰ Overtime: one more task (random Easy or Medium) while everyone shops
       const t = Object.assign(newTask(Math.random() < 0.5 ? "easy" : "medium"), { state: "inProgress", ownerId: p.id, overtime: true });
       if (p.isBot) { const sim = simulateBot(p, t); report(p, settle(p, t, sim.result), t, "⏰ Overtime"); }
@@ -569,6 +582,7 @@ function snapshotFor(pid) {
   return {
     day: state.day, phase: state.phase, code: state.code || null, hostId: myId, pace: state.pace || "frantic",
     dayLen: state.phase === "projects" || state.phase === "projectsIntro" ? PROJECT_SECONDS : taskDaySeconds(),
+    countdownLeft: state.phase === "countdown" ? Math.max(0, (state.countdownEndsAt - performance.now()) / 1000) : 0,
     timeLeft: ["task", "projects"].includes(state.phase) ? Math.max(0, (dayEndsAt - performance.now()) / 1000) : 0,
     introLeft: state.phase === "projectsIntro" ? Math.max(0, (introEndsAt - performance.now()) / 1000) : 0,
     projects: state.projects || [],
@@ -748,10 +762,18 @@ async function joinGame(name, code) {
 }
 
 function applySnapshot(s) {
+  const prevPhase = snap?.phase;
   snap = s;
   player = s.players.find((p) => p.id === myId);
-  if (player?.lockLeft > 0) localLockEnd = Math.max(localLockEnd, performance.now() + player.lockLeft * 1000);
+  // Use = (not Math.max): host is authoritative. A stale localLockEnd from a previous
+  // penalty can hold the client locked all round if Math.max keeps a larger old value.
+  localLockEnd = (player?.lockLeft > 0) ? performance.now() + player.lockLeft * 1000 : 0;
   localReviewEnd = player?.reviewLeft > 0 ? performance.now() + player.reviewLeft * 1000 : 0;
+  // Phase change: also clear any orphaned interrupt state
+  if (prevPhase && s.phase !== prevPhase) {
+    localLockEnd = 0;
+    clearedInts.clear();
+  }
   onOfficeEvents();
   checkFailBubbles();
   if (s.phase === "task" || s.phase === "projects") localEnd = performance.now() + s.timeLeft * 1000;
@@ -767,6 +789,7 @@ function render() {
   if (!live) { stopGossip(); stopChats(); stopBossQuotes(); }
   if (!live && !overtime) cancelMinigame();
   if (snap.phase === "lobby") renderLobby();
+  else if (snap.phase === "countdown") renderCountdown();
   else if (snap.phase === "task") renderDay();
   else if (snap.phase === "projectsIntro") renderIntro();
   else if (snap.phase === "projects") renderProjects();
@@ -806,6 +829,7 @@ function tick() {
     if (t) t.textContent = Math.ceil(left) + "s";
     if (b) b.style.width = (left / (snap.dayLen || 60)) * 100 + "%";
   }
+  if (isHost && state?.phase === "countdown" && performance.now() >= state.countdownEndsAt) doStartDay(1);
   if (isHost && (state?.phase === "task" || state?.phase === "projects")) interruptsTick();
   updateInterruptScreen();
   updateReviewBanner();
@@ -936,6 +960,17 @@ function showDeskItems() {
   const el = document.getElementById("deskItems"), items = player.activeToday || [];
   el.hidden = !items.length;
   el.innerHTML = items.map((a) => `<span>${isSabotage(a.id) ? "📉" : "📈"} ${ITEM_INFO[a.id][0]}</span>`).join("");
+}
+
+function renderCountdown() {
+  if (screenKey === "countdown") {
+    const n = Math.max(1, Math.ceil(snap.countdownLeft));
+    const el = document.getElementById("cdnum");
+    if (el) el.textContent = n;
+    return;
+  }
+  screenKey = "countdown";
+  app.innerHTML = `<div class="cdbox"><div class="cdnum" id="cdnum">3</div><div class="cdlabel">Get ready!</div></div>`;
 }
 
 /** 📋 Performance Review: red banner with a countdown, REVIEW stamps on the task cards. */

@@ -164,6 +164,10 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 .failbubble{position:fixed;z-index:12;transform:translate(-50%,-100%);background:#fff;border:3px solid #c62828;color:#c62828;border-radius:14px;padding:4px 10px;font-weight:900;font-size:15px;white-space:nowrap;animation:failpop 2.2s ease-out forwards;pointer-events:none}
 @keyframes failpop{0%{opacity:0;transform:translate(-50%,-60%) scale(.6)}12%{opacity:1;transform:translate(-50%,-100%) scale(1.1)}20%{transform:translate(-50%,-100%) scale(1)}85%{opacity:1}100%{opacity:0;transform:translate(-50%,-120%)}}
 @media (prefers-reduced-motion:reduce){.bossquote,.failbubble{animation:none}}
+.cdbox{text-align:center;margin-top:8px}
+.cdnum{font-size:100px;font-weight:900;line-height:1;color:#fff;text-shadow:0 4px 16px #000a,0 0 40px #fff4;animation:cdpop .4s ease-out}
+@keyframes cdpop{from{transform:scale(1.7);opacity:0}to{transform:scale(1);opacity:1}}
+.cdlabel{font-size:24px;font-weight:700;color:#fffdf6;margin-top:6px}
 .timer{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden}
 .timer div{height:100%;background:var(--memo)}
 </style>
@@ -174,10 +178,10 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 <div id="splash" role="button" tabindex="0" aria-label="Tap to begin"><img src="assets/landing.jpg" alt="Get Promoted! A Corporate Ascent Game"></div>
 <div id="app"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="src/data-model.js?v=16"></script>
-<script src="src/net.js?v=16"></script>
-<script src="src/minigames.js?v=16"></script>
-<script src="src/office-events.js?v=16"></script>
-<script src="src/game.js?v=16"></script>
+<script src="src/data-model.js?v=17"></script>
+<script src="src/net.js?v=17"></script>
+<script src="src/minigames.js?v=17"></script>
+<script src="src/office-events.js?v=17"></script>
+<script src="src/game.js?v=17"></script>
 </body>
 </html>
