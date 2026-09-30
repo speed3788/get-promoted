@@ -47,45 +47,75 @@ function runner(task, done, cleanup) {
 
 /** Drag el onto one of `targets` (mouse or touch). onDrop(index) fires on a hit; misses snap back. */
 function dragTo(el, targets, onDrop) {
-  // ox/oy: cumulative committed offset. Clamped to the parent so items can never escape the box.
-  let sx, sy, ox = 0, oy = 0;
+  // ox/oy: total committed translation so far (survives across multiple drags).
+  // baseLeft/baseTop: the element's untransformed origin within its parent, captured once at
+  // the first pointerdown and never recalculated — avoids the stale-rect bug where the
+  // bounding rect already includes a previous transform and makes the clamp wrong.
+  let sx, sy, ox = 0, oy = 0, baseLeft = null, baseTop = null, baseW, baseH;
+
   const clamp = (rawOx, rawOy) => {
     const par = el.parentElement;
-    if (!par) return [rawOx, rawOy];
-    const pr = par.getBoundingClientRect(), er = el.getBoundingClientRect();
-    const w = er.width, h = er.height;
-    // Original (un-transformed) top-left of el relative to parent
-    const elLeft = er.left - pr.left - rawOx;
-    const elTop  = er.top  - pr.top  - rawOy;
-    const maxX = pr.width  - w - elLeft;
-    const maxY = pr.height - h - elTop;
-    const minX = -elLeft;
-    const minY = -elTop;
-    return [Math.min(maxX, Math.max(minX, rawOx)), Math.min(maxY, Math.max(minY, rawOy))];
+    if (!par || baseLeft === null) return [rawOx, rawOy];
+    const pr = par.getBoundingClientRect();
+    // Keep the element fully inside the parent, with a small inset so the edge is still grabbable
+    const pad = 4;
+    const minX = -baseLeft + pad;
+    const maxX =  pr.width  - baseLeft - baseW - pad;
+    const minY = -baseTop  + pad;
+    const maxY =  pr.height - baseTop  - baseH - pad;
+    return [Math.min(maxX, Math.max(minX, rawOx)),
+            Math.min(maxY, Math.max(minY, rawOy))];
   };
+
   el.onpointerdown = (e) => {
     e.preventDefault();
     try { el.setPointerCapture(e.pointerId); } catch {}
     sx = e.clientX; sy = e.clientY;
     el.style.zIndex = 20;
     el.style.transition = "none";
+    // Capture the untransformed base position once, before any transform is applied this drag.
+    // We clear the current transform temporarily to get the true layout rect.
+    if (baseLeft === null) {
+      const saved = el.style.transform;
+      el.style.transform = "";
+      const er = el.getBoundingClientRect();
+      const pr = el.parentElement.getBoundingClientRect();
+      baseLeft = er.left - pr.left;
+      baseTop  = er.top  - pr.top;
+      baseW    = er.width;
+      baseH    = er.height;
+      el.style.transform = saved;
+    }
   };
+
   el.onpointermove = (e) => {
     if (!el.hasPointerCapture?.(e.pointerId)) return;
     const [cx, cy] = clamp(ox + e.clientX - sx, oy + e.clientY - sy);
     el.style.transform = `translate(${cx}px,${cy}px)`;
   };
+
   el.onpointerup = (e) => {
     el.style.zIndex = "";
     el.style.transition = "";
+    const [finalOx, finalOy] = clamp(ox + e.clientX - sx, oy + e.clientY - sy);
+    el.style.transform = `translate(${finalOx}px,${finalOy}px)`;
+    // Compute the element's clamped centre mathematically from its original (untransformed)
+    // position + the final translation. getBoundingClientRect is unreliable here because
+    // the browser may not have composited the new transform before the handler returns.
+    const origCx = baseLeft + baseW / 2;   // centre X in parent-local coords (no transform)
+    const origCy = baseTop  + baseH / 2;   // centre Y in parent-local coords (no transform)
+    const par  = el.parentElement;
+    const pr   = par.getBoundingClientRect();
+    const elCx = pr.left + origCx + finalOx; // converted to screen coords
+    const elCy = pr.top  + origCy + finalOy;
     const i = targets.findIndex((t) => {
       const r = t.getBoundingClientRect();
-      return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      return elCx >= r.left && elCx <= r.right && elCy >= r.top && elCy <= r.bottom;
     });
     if (i >= 0) {
       onDrop(i);
     } else {
-      [ox, oy] = clamp(ox + e.clientX - sx, oy + e.clientY - sy);
+      [ox, oy] = [finalOx, finalOy];
     }
   };
 }
