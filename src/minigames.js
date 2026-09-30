@@ -47,18 +47,33 @@ function runner(task, done, cleanup) {
 
 /** Drag el onto one of `targets` (mouse or touch). onDrop(index) fires on a hit; misses snap back. */
 function dragTo(el, targets, onDrop) {
-  // ox/oy: the cumulative committed offset so dragging is always relative to where it last rested
+  // ox/oy: cumulative committed offset. Clamped to the parent so items can never escape the box.
   let sx, sy, ox = 0, oy = 0;
+  const clamp = (rawOx, rawOy) => {
+    const par = el.parentElement;
+    if (!par) return [rawOx, rawOy];
+    const pr = par.getBoundingClientRect(), er = el.getBoundingClientRect();
+    const w = er.width, h = er.height;
+    // Original (un-transformed) top-left of el relative to parent
+    const elLeft = er.left - pr.left - rawOx;
+    const elTop  = er.top  - pr.top  - rawOy;
+    const maxX = pr.width  - w - elLeft;
+    const maxY = pr.height - h - elTop;
+    const minX = -elLeft;
+    const minY = -elTop;
+    return [Math.min(maxX, Math.max(minX, rawOx)), Math.min(maxY, Math.max(minY, rawOy))];
+  };
   el.onpointerdown = (e) => {
     e.preventDefault();
     try { el.setPointerCapture(e.pointerId); } catch {}
     sx = e.clientX; sy = e.clientY;
-    el.style.zIndex = 20; // bring to front while dragging
+    el.style.zIndex = 20;
     el.style.transition = "none";
   };
   el.onpointermove = (e) => {
     if (!el.hasPointerCapture?.(e.pointerId)) return;
-    el.style.transform = `translate(${ox + e.clientX - sx}px,${oy + e.clientY - sy}px)`;
+    const [cx, cy] = clamp(ox + e.clientX - sx, oy + e.clientY - sy);
+    el.style.transform = `translate(${cx}px,${cy}px)`;
   };
   el.onpointerup = (e) => {
     el.style.zIndex = "";
@@ -68,11 +83,9 @@ function dragTo(el, targets, onDrop) {
       return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
     });
     if (i >= 0) {
-      onDrop(i); // landed on a target — action fires
+      onDrop(i);
     } else {
-      // Commit the new position so the item stays where the player moved it
-      ox += e.clientX - sx;
-      oy += e.clientY - sy;
+      [ox, oy] = clamp(ox + e.clientX - sx, oy + e.clientY - sy);
     }
   };
 }
