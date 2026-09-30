@@ -1,373 +1,186 @@
 # Get Promoted! — Game Design (v2)
 
-This is the single source of truth for how the game actually works. If code
-and this doc ever disagree, this doc is right until we deliberately change it
-here first.
+The single source of truth for how the game works. If code and this doc
+disagree, fix one of them on purpose. History and reasoning behind the
+numbers: `docs/BALANCE-NOTES.md` and the "Locked:" sections of `docs/BACKLOG.md`.
 
 ## Overview
 
-4 players (empty seats filled by bots), 5 in-game days, each day ~60 seconds
-of active play plus an untimed "ready up" gate between days. Players
-complete tasks for a Sales/Marketing company to earn money, buy passive
-Boosts/Sabotages each night, and compete head-to-head on Day 5. Highest
-**Career Earnings** at the end wins the promotion.
+A 4-player Sales/Marketing office party game (empty seats filled by bots).
+Five in-game days. Days 1-4: grab tasks from the Boss, finish them fast for
+cash, then spend it each night on Boosts for yourself and Sabotages for your
+coworkers. Day 5: everyone races through the same 4 Projects. The Boardroom
+reveals everyone's Career Earnings, hands out 3 accolades, and promotes the
+top earner — human or bot. Plays on phones and computers (touch or mouse).
 
-## Day structure
+## Match structure
 
-- **Days 1-4**: task loop (below), then a shop/inventory night
-- **Day 5**: 4 shared "Projects" instead of the personal task loop — see below
-- Between every day: a "ready up" button per player — this untimed gap is
-  what actually determines real-world match length, not a fixed clock
+- **Splash screen** (tap to begin) → **Menu** (name, day length, solo / host
+  / join) → **Lobby** (online only) → **Days 1-4** → **Day 5** → **Boardroom**.
+- **Day length (the host's pace pick)** applies to Days 1-4:
+  🐇 Frantic 1:00 · 🚶 Standard 1:30 · ☕ Relaxed 2:00. Longer days mean more
+  tasks and more money, so Relaxed is also an easier, friendlier game.
+  **Day 5 is always 60 seconds.**
+- **Nights (after Days 1-4):** summary → Supply Closet (shop) → loadout
+  (pick tomorrow's items) → ready up. The next day starts when everyone is
+  ready; bots are always ready.
 
-## Task acquisition
+## The board
 
-Two-layer system:
+- Four task cards are available at a time, shared by everyone: take one and
+  its slot refills instantly. A small strip on the Boss's desk shows the four
+  tiers at a glance (Easy ● green circle, Medium ■ amber square, Hard ▲ red
+  triangle — shape + color for colorblind players).
+- Cards show the tier, the game, and the pay. The workload is a surprise.
+- Day 1 opens with an all-Easy board. After that, new cards follow the
+  day's odds: Day 1 60/30/10, Day 2 50/35/15, Day 3 40/40/20,
+  Day 4 33/33/34 (Easy/Medium/Hard %).
+- A task that runs out of time pays nothing and goes back on the board.
 
-1. **Ambient strip** — a row of small color-coded icons (Easy/Medium/Hard,
-   by color) sits in front of the Boss, visible to all 4 players at all
-   times, including while they're mid-task. Refills one icon at a time as
-   they're taken (not a hard reset — always ~4 visible).
-2. **Decision screen** — whenever a player needs a new task (Day start, or
-   right after finishing one), *their own screen* shows the current live
-   pool enlarged: full detail, tier color AND exact dollar value. Since it's
-   the same shared pool as the ambient strip, an option can vanish off a
-   player's decision screen if someone else takes it first — real-time,
-   no same-pixel tap races.
+## The difficulty ladder
 
-**Day 1 exception**: the very first board shown to all 4 players is
-guaranteed all-Easy. Every other day (2-4) starts normally, following that
-day's spawn odds below. Day 5 has no board at all.
+**Tier means difficulty and pay, not the type of game.** Each game exists
+in 2-3 tiers. Every version rolls a **workload** in a range; the **time
+limit** is base + (per-item × workload); the **pay** sits in the tier's range
+according to how heavy the roll was.
 
-### Task tier spawn odds (Days 1-4, after Day 1's guaranteed-Easy opening)
+**Tier pay:** 🟢 Easy $5-8 · 🟨 Medium $12-19 · 🔺 Hard $35-55.
 
-| Day | Easy | Medium | Hard |
+**Payout = Base × Accuracy × Speed.** Speed is 1.5× if you finish within the
+first 25% of the time limit, sliding to 0.5× at the limit.
+
+| Game | 🟢 Easy | 🟨 Medium | 🔺 Hard |
 |---|---|---|---|
-| 1 | 60% | 30% | 10% |
-| 2 | 50% | 35% | 15% |
-| 3 | 40% | 40% | 20% |
-| 4 | 33% | 33% | 34% |
+| 📎 Stapler Frenzy (mash) | 10-14 taps · 1s+0.25s/tap | 22-30 taps, button hops every 8 · 1.5s+0.25s/tap | — |
+| 🗑️ Cover Your Tracks (drag to trash) | 3-5 docs · 1s+0.9s/doc | 6-8 docs + 1-2 signed contracts to leave (HR) · 1.5s+0.8s/doc | 7-9 docs: TOP SECRET → shredder, rest → trash (HR) · 1.5s+1.0s/doc |
+| 📧 Inbox Zero Rush (check + Clear all) | 4-6 emails · 1s+0.6s | 6-8, leave the Boss's emails, scrolls (HR) · 2s+0.6s | 8-10, check only the junk, scrolls (HR) · 2.5s+0.9s |
+| 📝 Post-it Panic (click) | 5-7 notes · 1s+0.4s | 9-12 + the Boss's red note to leave (HR) · 1.5s+0.4s | — |
+| 📠 Copier Meltdown (drag pages from one printer tray) | 4-6 pages every 0.9s, jams at 4 piled · 1s+1.0s | 7-9 every 0.7s, jams at 2 · 1.5s+0.8s | — |
+| 📊 Hit the Quota (hold to grow bars) | 1-2 bars, target line shown · 1.5s+2.2s | 2-3, axis every $10K · 2s+2.2s | 3-4, axis every $20K, faster · 2.5s+2.2s |
+| 🥧 Budget Pie (stop a sweeping slice) | 1-2 slices, 25/50%, outline shown · 1.5s+2.4s | 2-3, 10% steps, ticks every 25% · 2s+2.4s | 3-4, 5% steps, no marks, faster · 2.5s+2.2s |
+| 📈 Trend Line (stop a dot at a sales value) | — | 2-3 stops, axis every $10K · 2s+2.5s | 3-4, axis every $20K, faster · 2.5s+2.3s |
+| 🧮 Quarterly Crunch (math) | 1-2 questions, under $100, 3 choices · 1.5s+3s | 2 questions, 3 choices (Boss) · 2s+3s | 2 questions, 4 choices incl. a trap (Boss) · 2.5s+3.5s |
+| 🎯 Client Curveball (handle a client) | 1 scenario, Safe/Risky only, flat $6.50 · 5.5s | 1-2 scenarios, Safe/Risky/Wrong (Boss) · 2s+4s | 2 scenarios, + a sneaky Wrong (Boss) · 2.5s+4.5s |
 
-## Universal task rules (all tiers)
+Totals: 🟢 9 games · 🟨 10 games · 🔺 7 games.
 
-- A task ends when its objective is met — **not a fixed clock**. Every task
-  has an **outer time cap**; blow it without succeeding and the task fails
-  outright: no payout, returns to the shared pool for someone else.
-- **Payout = Base Value × Accuracy × Speed**
-  - **Base Value**: random within the tier's range, rolled per task
-  - **Accuracy**: how correctly it was done (tier-specific, see below)
-  - **Speed**: rewards finishing fast relative to the outer cap — for
-    clock-based tiers (Easy), 1.5× near-instant down to 0.5× at the cap; for
-    retry-based tiers (Medium), determined by which attempt succeeded
-    (pass 1 = 1.5×, pass 2 = 1.0×, pass 3 = 0.6×); for Hard, based on total
-    time across the question chain relative to its cap.
+**Accuracy rules:**
+- Reflex games: 100% unless a mistake applies. Copier jams cost −25% each
+  (and 1 second).
+- Chart games: closeness to the target. Within 3 = Perfect (100%), within 8
+  = Good (70%), farther = a miss (that bar/slice/stop resets; try again).
+  Accuracy is the average.
+- Curveball: Safe 80%, Risky a coin flip (150% or 20%), Wrong 0%. Quarterly
+  Crunch: right 100%, wrong 0% (Easy only; see penalties).
 
-## Easy tier — reflexes · Base $5-8
+**Content:** 41 emails (tagged 👔 Boss / 🤝 client / 📧 regular / 🚩 junk,
+with matching tints), 40 Curveball scenarios (20 gentler, 20 trickier),
+12 math templates (numbers randomized every time). All at the top of
+`src/minigames.js`. Answer order is shuffled every time.
 
-Go until the objective's met (not a fixed timer). Accuracy is always 1.0
-except where noted (mistakes are about timing, not correctness). Outer cap
-~4-5s.
+## Penalties: "The Boss wants a 1 on 1" and "HR wants a chat"
 
-| Game | Interaction | How it plays |
-|---|---|---|
-| Stapler Frenzy | Mash | Mash a button until the staple bar fills to 100% |
-| Cover Your Tracks | Drag (static pile) | Drag each doc into the trash until the pile's cleared |
-| Inbox Zero Rush | Checklist + confirm | Check every box next to a list of emails, then hit "Clear All" |
-| Post-it Panic | Click (static pile) | Click every sticky note until the board's clear |
-| Copier Meltdown | Drag (streaming) | Pages keep coming — drag each into the shredder as it appears, until the copier stops |
+- **Boss:** any wrong answer in Quarterly Crunch or Client Curveball on
+  Medium/Hard. **HR:** a conduct mistake in the games marked (HR) above.
+- Either one: the **whole task pays $0** and the player is **locked out for
+  4 seconds** behind a screen (the Boss's face, or 🧑‍💼 HR). A Risky choice
+  that backfires is not "wrong" — no penalty.
+- Easy never penalizes. Lockouts count toward the "Most 1-on-1s with the
+  Boss" accolade.
 
-## Medium tier — precision timing · Base $12-19
+## Economy
 
-A needle/meter has a nested target zone: narrow "Perfect" band inside a
-wider "Good" band. Miss both entirely and it loops for another pass (up to
-the outer cap of 6s) — Speed drops with each extra pass.
+- **Wallet** (spendable) vs **Career Earnings** (the score; spending never
+  lowers it). Other players' Career Earnings stay hidden until the Boardroom.
+- **Shop:** 5 cards per night, no duplicates, each bought at most once that
+  night. Items are **consumable**: each works for one day, then it's gone.
+  Duplicates can be stockpiled.
 
-**Accuracy**: Perfect = 1.0, Good = 0.7.
-
-| Flavor | Mechanic | Flavor text |
-|---|---|---|
-| Perfect Send | Click | Time your email to hit send at the right moment |
-| Nail the Pitch | Click | Time your line in a sales call |
-| Hold the Line | Hold/Release | Hold a phone call, release when the caller's ready |
-| Closing the Deal | Hold/Release | Hold through negotiation tension, release at peak leverage |
-
-## Hard tier — quick thinking / risk · Base $30-45
-
-A chain of 2 rapid multiple-choice questions (cut from 3: reading three took
-too long). Outer cap 10s for the whole chain. Chain **Accuracy = average of
-the 2 questions' scores**.
-
-**Quarterly Crunch** (math): 3 options each, deterministic.
-- Correct = 1.0, Wrong = 0
-
-**Client Curveball** (judgment call): 3 options each — Safe / Risky / Wrong.
-- Safe = 0.8 guaranteed
-- Risky = 50/50 → 1.5 (big win) or 0.2 (big flop) — deliberately +EV
-  (average 0.85) to reward bold players over always-safe players
-- Wrong (obviously bad choice) = 0
-
-## Economy: Wallet vs. Career Earnings
-
-Two separate numbers per player:
-- **Wallet** — current spendable balance. Goes up from tasks, down when
-  buying Boosts/Sabotages. This is what you need on hand to shop.
-- **Career Earnings** — the actual score. A running total of everything
-  ever earned; buying something costs Wallet but never reduces this number.
-  This prevents the shop from punishing players for spending.
-
-## Boosts & Sabotages
-
-Bought into an unlimited **inventory** (can't sell, duplicates allowed).
-**Items are consumable**: each one works for one day, then it's gone. Before each
-new day (including going into Day 5), each player **selects 3** from their
-inventory to be active — passive, whole-day effects only, never a
-manually-triggered one-time use.
-
-### Shop mechanics
-
-Each night (after Days 1-4 only — no shop after Day 5), every player is
-shown **5 cards** drawn from the pool of 16 items, weighted by tier and by
-which day it is:
-
-| Item tier | Price | Day 1 odds | Day 2 odds | Day 3 odds | Day 4 odds |
+| Item tier | Price | Night 1 | Night 2 | Night 3 | Night 4 |
 |---|---|---|---|---|---|
 | Common | $30-45 | 70% | 55% | 35% | 20% |
 | Uncommon | $70-100 | 25% | 35% | 40% | 40% |
 | Rare | $150-200 | 5% | 10% | 25% | 40% |
 
-No duplicate items within the same day's 5-card shop.
+- **Loadout:** 3 slots per day. Targeting "👥 Everyone else" uses 2 slots.
 
-### Boosts
+### Boosts (help yourself)
 
-| Name | Tier | Effect |
+| Boost | Tier | Effect |
 |---|---|---|
-| Power Networking | Common | +10% Base Value on all tasks, all day |
-| Double Espresso | Common | +15% Speed multiplier on everything, all day |
-| IT Fast-Track | Common | +1 extra retry pass before Medium tasks fail out |
-| Executive Assistant | Uncommon | Wider Perfect/Good zones on Medium tasks, all day |
-| Legal Pre-Approval | Uncommon | Hard chains never draw the "Wrong" option |
-| HR Wellness Stipend | Uncommon | Flat cash bonus at end of day, regardless of performance |
-| AI Tokens | Rare | Auto-completes first 5 Easy tasks claimed today, at max value (Perfect + top Speed) |
-| Bribe the Boss | Rare | Your decision screen guarantees 2+ of 4 slots are Medium/Hard, all day |
+| Power Networking | Common | +10% pay on every task |
+| Double Espresso | Common | +15% speed bonus |
+| IT Fast-Track | Common | +2 seconds on every Medium task |
+| Executive Assistant | Uncommon | Wider Perfect/Good bands on chart games |
+| Legal Pre-Approval | Uncommon | Question games drop one wrong answer |
+| HR Wellness Stipend | Uncommon | +$25 at the end of the day |
+| Overtime | Uncommon | One extra task (random Easy/Medium) at night while everyone else shops |
+| AI Tokens | Rare | First 5 Easy tasks finish themselves at max pay |
+| Bribe the Boss | Rare | At least 2 Medium/Hard tasks on your own board |
+| Bribe HR | Rare | Blocks every sabotage aimed at you that day (you're told how many) |
 
-### Sabotages (target a rival)
+When a boost adds money, a green **+$X** (the boost's share only) floats up;
+non-money boosts show a small label when they kick in.
 
-| Name | Tier | Effect |
-|---|---|---|
-| Budget Freeze | Common | Target's Base Value -10% on all tasks, all day |
-| Printer Jam | Common | Target's Speed multiplier capped lower, all day |
-| Reply-All Reminder | Common | Target's outer time cap shortened slightly, all day |
-| IT Ticket Backlog | Uncommon | Target's Medium zones shrink, all day |
-| Slack Gossip | Uncommon | Random popups over target's task, random timing/position; ignored popups multiply, eventually covering the whole screen |
-| Micromanager Watching | Uncommon | Target's Risky Hard outcomes shift unfavorably |
-| Performance Review | Rare | Target's decision screen guarantees 2+ Easy-only slots, all day |
-| Frozen Paycheck | Rare | Target's first 1-2 completed tasks each day pay $0 (randomized 1 or 2 each time it's active) |
+### Sabotages (hinder a rival) — every one visibly interrupts
 
-## Day 5 — Projects (PvP finale)
+| Sabotage | Tier | Target | What the victim sees |
+|---|---|---|---|
+| 📦 You Have a Delivery | Common | 1 player | 2× a day, "Grabbing your package…" locks the board 3-5s |
+| 🖨️ Printer's Jammed Again | Common | 1 player | 2× a day, tap a hopping Unjam button 6 times |
+| 🔐 Password Expired | Common | 1 player | 2× a day, type a shown 4-digit PIN (a wrong digit starts over) |
+| 📅 Surprise Meeting | Uncommon | 1 or everyone | Once a day, a 5s "quick sync" locks the board |
+| 💬 Slack Gossip | Uncommon | 1 or everyone | Pop-ups; each one left open doubles every 5s (max 25) |
+| 🙋 Chatty Coworker | Uncommon | 1 or everyone | 3× a day, a Slack chat (20-chat bank) that only the right reply ends; wrong replies keep it going and move the window |
+| 🚬 Smoke Break | Uncommon | 2 players | Target + one random coworker (never the sender) stuck outside 5s together |
+| 📋 Performance Review | Rare | 1 or everyone | First 30s of the day: Easy tasks only, red banner, REVIEW stamps |
+| 🧊 Frozen Paycheck | Rare | 1 or everyone | First 1-2 tasks pay $0, with a SABOTAGED! stamp |
 
-No board, no shop. All 4 players get the **same task simultaneously**,
-called a Project, announced one at a time by the Boss.
+- Board-locking interruptions wait until the victim finishes their current
+  task. Chats and smoke breaks can land mid-task.
+- Pop-ups always stay inside the office picture.
+- Senders are anonymous — except that "Everyone else" reveals the one person
+  who wasn't hit (accepted as part of the fun).
 
-- **4 Projects**: Medium, Medium, Hard, Hard (escalating)
-- Standard Payout formula applies per player per Project, same as any
-  other day
-- **Time-saved bonus**: once all 4 Projects are done, compare total time
-  spent against the 60-second budget. Bonus = **1% per second saved**,
-  applied to the sum of all 4 Projects' payouts.
-- A player who finishes early can peek at how the others are doing while
-  waiting.
-- **Bribe the Boss** and **Performance Review** have nothing to act on
-  during Day 5 (no board) — they simply go dormant for the day.
+## Day 5: Projects
 
-## End game — Boardroom
+- The Boss announces Projects (4-second countdown), then everyone gets the
+  **same 4 tasks in the same order** (Medium, Medium, Hard, Hard) with the
+  same pay, and races through them. Penalties and sabotages still apply.
+- Finishing all 4 earns **+1% per second saved** under 60s, on the total.
+- The race is shown on the cubicle badges ("Project 2 of 4").
 
-1. Reveal each player's **Career Earnings** (pre-bonus).
-2. Randomly draw **3 of 8** accolade categories. Whoever leads that
-   category's tracked stat wins it and gets a **flat bonus** in that
-   category's range (see below).
-3. Highest Career Earnings after bonuses wins — gets "promoted."
+## The Boardroom
 
-### Accolade pool (3 drawn per game)
-
-| Category | Rewards | Bonus range |
-|---|---|---|
-| Overtime Grinder | Most total tasks completed | $15-30 |
-| Speed Demon | Highest average Speed multiplier | $15-30 |
-| Silent Assassin | Most sabotages used on others | $15-30 |
-| Big Spender | Most Wallet cash spent on Boosts/Sabotages | $20-35 |
-| Perfectionist | Highest average Accuracy | $25-40 |
-| Biggest Gambler | Most Risky choices in Client Curveball | $30-50 |
-| Most Mistakes | Most outer-cap fails / wrong answers (comeback bonus) | $40-65 |
-| Most Sabotaged | Received the most sabotages (comeback bonus) | $40-65 |
-
-These ranges were chosen via simulation (see `docs/BALANCE-NOTES.md`) to
-keep accolades capable of shifting the standings by about 1 spot normally,
-and 2 spots in a lucky multi-accolade game — without letting 4th place
-routinely leapfrog straight to 1st.
-
-## Art & Presentation
-
-**One composited scene**, not separate layered sprites — since characters
-never move or animate on their own (all interactivity is task overlays on
-top), a single flat-cartoon illustration covers the Boss and all 4 workers
-seated at their desks. Which specific character (male/female, which face)
-sits in which cubicle is fixed by the art and purely decorative — it does
-not map to a specific real player. Player identity is handled entirely by
-UI overlay on top of the fixed art, not by the underlying sprite.
-
-Props (stapler, trash can, shredder, inbox, sticky notes, etc.) use
-**emoji**, not generated art — free, instant, renders consistently
-everywhere. Boost/Sabotage shop cards use a tier-colored border
-(gold/silver/bronze) plus a generic icon (up-arrow style for Boosts,
-down-arrow/target style for Sabotages) rather than 16 unique illustrations.
-
-**Two background images total, and the office is always the world.** The
-office is a fixed backdrop filling the screen height (full image visible,
-centered; on phones the carpet color continues below it). Every screen
-floats on top of it: menus, lobby, shop, and Boardroom over the empty
-office; Days 1-5 over the office with the Boss and 4 seated workers. On
-live days a compact timer bar floats over the top wall and the task panel
-floats directly under the Boss's desk, over the cubicles (it may cover the
-player badges; that's fine). The first screen and Lobby cards also start
-below the Boss. The Boss is never covered.
-
-### Layout regions (percentages of the composited image)
-
-| Region | X range | Y range |
-|---|---|---|
-| Boss area | 0-100% | 0-33% |
-| Cubicle 1 (top-left) | 0-50% | 33-60.5% |
-| Cubicle 2 (top-right) | 50-100% | 33-60.5% |
-| Cubicle 3 (bottom-left) | 0-50% | 60.5-100% |
-| Cubicle 4 (bottom-right) | 50-100% | 60.5-100% |
-
-These are estimates from the art's natural proportions — re-check against
-the actual rendered image once overlay code exists.
-
-### Overlay elements
-
-- **Ambient task icon strip**: horizontal row of ~4 small icons, centered
-  around x=50%, y≈28-32% — at the desk edge, just above the cubicle row.
-  Color-coded by tier: Easy = green (`#4CAF50`), Medium = amber
-  (`#F5A623`), Hard = red (`#E53935`) — the classic difficulty
-  convention. Each tier also gets a distinct shape (Easy = circle,
-  Medium = square, Hard = triangle) alongside its color, so the strip
-  reads correctly for colorblind players glancing quickly at a fast
-  board. No illustration beyond the shape/color itself.
-- **Per-player badge**: name + one status line, centered on the **top edge
-  of that player's cubicle wall** (just above the worker's head). The
-  task panel may cover these while choosing a task (accepted by design). Days 1-4
-  show `💰Wallet` (Career Earnings stay hidden until the Boardroom) with a
-  pop animation when it changes; Day 5 shows project progress ("Project 2
-  of 4" / "✅ all done"). Your own cubicle has a thin outline in your color.
-- **Active items on the Boss's desk**: today's active Boosts/Sabotages show
-  as small tags (📈 Boost / 📉 Sabotage + name) on the front of the Boss's
-  desk, just under the task strip — only on your own screen. They sit on top
-  of the cubicle badges if the two overlap (narrow phones).
-- **Task panel position**: fixed just below the Boss's desk (about 34% of the
-  office height + 30px), the same spot every day whether or not items are active.
-- **Busy glow**: a cubicle glows in its player's color while that player
-  (or bot) is working a task — shows at a glance who's busy.
-- **Task popup anchor** (mini-game modal, Slack Gossip popups): centered
-  on that cubicle's monitor, roughly 35% into the quadrant's width, 40%
-  into its height (monitors sit slightly left-of-center in each cubicle).
+1. Career Earnings revealed.
+2. 3 accolades drawn from 8 (skipping any nobody qualifies for; ties broken
+   at random), revealed one at a time with standings re-sorting:
+   Overtime Grinder, Speed Demon, Silent Assassin ($15-30) · Big Spender
+   ($20-35) · Perfectionist ($25-40) · Biggest Gambler ($30-50) ·
+   Most 1-on-1s with the Boss, Most Sabotaged ($40-65, comeback bonuses).
+3. **PROMOTED** stamp on the top earner — **bots can win.** A human win
+   adds a roast for the winner and one for 4th place; a bot win adds an
+   "AI took the job" roast (banks in `src/office-events.js`).
 
 ## Bots
 
-Empty seats (fewer than 4 human players) are filled by bots. **One bot
-type only** — no Easy/Medium/Hard bot tiers.
+One bot type with average, simulation-tested skill. Bots claim tasks, get
+penalized sometimes, lose time to sabotages, shop greedily (up to 3 items),
+curate randomly, and aim sabotages at the richest rival.
 
-- **Stats**: the bot reuses the exact "Average" skill/strategy profile
-  already validated by simulation throughout this design (same task
-  completion time distributions, same accuracy rates, same mixed-tier task
-  selection odds). No separate tuning — it's the same numbers already
-  proven to behave like a believable mid-tier player.
-- **Full participation**: the bot plays tasks, buys from the shop, curates
-  its 3 active items, uses Sabotages against rivals, and plays Day 5
-  Projects — nothing is faked or skipped.
-- **Shop behavior**: each shop night, the bot buys the single most
-  expensive item it can currently afford (simple greedy heuristic). It
-  curates its 3 active items by picking randomly from its inventory. This
-  is a starting default — revisit if it feels too passive or too lucky in
-  playtesting.
-- **Never wins**: the bot's Wallet and Career Earnings are genuinely
-  earned and displayed like any player's — nothing is artificially capped
-  during play. But **only human players are eligible for the promotion**:
-  at the Boardroom, if a bot has the highest Career Earnings, the
-  highest-scoring human wins instead. Bots remain eligible to win
-  end-game accolades (realistic, though it occasionally "wastes" one of
-  the 3 drawn categories on a bot instead of a human).
+## Multiplayer
 
-## Networking
+Host-authoritative, peer-to-peer (PeerJS; optional free TURN relay — see
+`src/net.js`). 6-character room codes. The host runs every rule and sends
+each player only what they're allowed to see. A guest who drops is replaced
+by a bot; if the host leaves, the game ends.
 
-**Host-authoritative peer-to-peer via PeerJS.** No backend server — one
-player's device is the host and holds the single real copy of game state
-(board, wallets, shop, phase); every other device sends inputs (task
-claims, minigame actions, purchases) to the host and just renders
-whatever the host says happened.
+## Art & presentation
 
-- **Connection reliability**: direct peer-to-peer (STUN) by default,
-  with an optional free TURN relay (Metered's Open Relay, 20 GB/month) for
-  players on strict networks. Note: Open Relay's old shared public
-  password no longer works — each developer signs up for a free account
-  and pastes their own app name + API key into `src/net.js`.
-- **Room codes**: host generates a short, human-typeable code (e.g.
-  `CORP84`), not a raw technical peer ID.
-- **State sync**: host broadcasts the entire current game state as one
-  message on every change, rather than a diff/patch system. The state is
-  small enough (4 players, a handful of numbers each) that this simplicity
-  is free — no real bandwidth concern at this scale.
-- **Player disconnects mid-game**: host hands that seat to a bot (see
-  Bots) for the rest of the match. No mid-match rejoin support.
-- **Host disconnects mid-game**: the game ends for everyone. No host
-  migration — confirmed acceptable given the "keep this buildable
-  quickly" priority.
-
-## Screen flow
-
-Top-level: **Host/Join → Lobby → Days 1-4 (looped) → Day 5 → Boardroom.**
-
-- **Host/Join**: one player hosts (generates a room code), others join
-  with it. Layout: a title, two buttons ("Host a game" / "Join a game"),
-  and a code-entry field below for the join path. Hosting skips code
-  entry entirely — it immediately displays the generated room code big
-  on screen with a copy button, ready to share.
-- **Lobby**: name entry, empty seats fill with bots, all players ready up
-  to start. No character/avatar customization — the composited scene's
-  characters are fixed art, not player-assignable (see Art & Presentation).
-
-### Days 1-4 (repeats 4 times)
-
-**Task screen (60s) → Shop → Curate 3 → Ready up**, then loops back to
-Task screen for the next day. No recap screen between Task screen and
-Shop — the per-cubicle Wallet badges already show earnings live during
-play, so a separate summary would be redundant.
-
-- **Task screen**: the composited office scene, live for 60 seconds, with
-  the ambient task strip and personal decision screens as described above.
-- **Shop**: draw 5 cards from the pool of 16 (day-weighted odds), buy with
-  Wallet.
-- **Curate 3**: select 3 items from full inventory to be active for the
-  next day.
-- **Ready up**: untimed gate — waits for all 4 players before advancing.
-  Layout: a header ("Day X starting soon" + "N of 4 ready"), a row per
-  player reusing the same badge language as the cubicle overlays (color
-  dot, name, current Wallet), each with a checkmark once ready or a
-  waiting indicator until then, and the local player's own "Ready up"
-  button. Bots show as instantly ready — no waiting on them.
-
-### Day 5 and the ending
-
-**Day 5 intro → 4 Projects (2 Medium + 2 Hard) → Time bonus → Boardroom.**
-
-- **Day 5 intro**: the Boss announces the shift to Projects — no board,
-  no shop that day.
-- **4 Projects**: shared simultaneous tasks, standard payout formula per
-  Project.
-- **Time bonus**: calculated once all 4 Projects are done (1% per second
-  saved under the 60s budget, applied to the sum of all 4).
-- **Boardroom**: Career Earnings revealed, 3 of 8 accolades drawn and
-  awarded, final ranking determined, winner "promoted."
-
-## Open questions / not yet decided
-
-See `docs/BACKLOG.md`.
+- Two backgrounds: the empty office behind menus/night/Boardroom, and the
+  office with the Boss + 4 workers on live days. Cards float on top; the
+  Boss is never covered. Splash screen: `assets/landing.jpg`.
+- Cubicle badges (name + wallet, or Day 5 progress), a glow while a player
+  is working, today's items as tags on the Boss's desk.
+- The Boss says a "motivational" quote every 20-35 seconds. When anyone
+  fails a task, a censored cuss bubble pops over their cubicle on every screen.

@@ -8,45 +8,39 @@
  * docs/BALANCE-NOTES.md for why specific numbers were chosen.
  */
 
-// ---- Task tiers ---------------------------------------------------------
+// ---- Task ladder (v2 redesign — see docs/BACKLOG.md "difficulty ladder") -----
+// Tier = difficulty + pay, not type of game. Each game exists in 2-3 tiers.
+// Every version rolls a WORKLOAD in [lo, hi]; the time limit is base + per × workload,
+// and the pay is placed in the tier's range by how heavy the roll was.
+// penalty: "boss" (wrong answer) or "hr" (conduct mistake) → $0 + 4s lockout.
 
-const TASK_TIERS = {
-  easy: {
-    minValue: 5,
-    maxValue: 8,
-    outerCapSeconds: 4,
-    flavors: [
-      "staplerFrenzy",
-      "coverYourTracks",
-      "inboxZeroRush",
-      "postItPanic",
-      "copierMeltdown",
-    ],
-  },
-  medium: {
-    minValue: 12,
-    maxValue: 19,
-    outerCapSeconds: 6,
-    // Speed depends on which retry pass succeeded, not raw elapsed time.
-    speedByPass: { 1: 1.5, 2: 1.0, 3: 0.6 },
-    accuracyByResult: { perfect: 1.0, good: 0.7 },
-    flavors: ["perfectSend", "nailThePitch", "holdTheLine", "closingTheDeal"],
-  },
-  hard: {
-    minValue: 30,
-    maxValue: 45,
-    outerCapSeconds: 10, // was 15 with 3 questions; scaled with the chain length
-    questionsPerChain: 2, // cut from 3: reading 3 questions took too long
-    flavors: ["quarterlyCrunch", "clientCurveball"],
-    // Client Curveball answer scoring (Quarterly Crunch is just correct=1/wrong=0)
-    curveballScoring: {
-      safe: 0.8,
-      riskyWin: 1.5,
-      riskyLose: 0.2,
-      wrong: 0,
-    },
-  },
+const TIER_PAY = { easy: [5, 8], medium: [12, 19], hard: [35, 55] };
+const LOCKOUT_SECONDS = 4;
+
+const LADDER = {
+  // reflex games
+  staplerFrenzy:   { easy: { wl: [10, 14], t: [1, 0.25] },  medium: { wl: [22, 30], t: [1.5, 0.25] } },
+  coverYourTracks: { easy: { wl: [3, 5], t: [1, 0.9] },     medium: { wl: [6, 8], t: [1.5, 0.8], penalty: "hr" },
+                     hard: { wl: [7, 9], t: [1.5, 1.0], penalty: "hr" } },
+  inboxZeroRush:   { easy: { wl: [4, 6], t: [1, 0.6] },     medium: { wl: [6, 8], t: [2, 0.6], penalty: "hr" },
+                     hard: { wl: [8, 10], t: [2.5, 0.9], penalty: "hr" } },
+  postItPanic:     { easy: { wl: [5, 7], t: [1, 0.4] },     medium: { wl: [9, 12], t: [1.5, 0.4], penalty: "hr" } },
+  copierMeltdown:  { easy: { wl: [4, 6], t: [1, 1.0] },     medium: { wl: [7, 9], t: [1.5, 0.8] } },
+  // chart games (replace the 4 old timing games)
+  hitTheQuota:     { easy: { wl: [1, 2], t: [1.5, 2.2] },   medium: { wl: [2, 3], t: [2, 2.2] },   hard: { wl: [3, 4], t: [2.5, 2.2] } },
+  budgetPie:       { easy: { wl: [1, 2], t: [1.5, 2.4] },   medium: { wl: [2, 3], t: [2, 2.4] },   hard: { wl: [3, 4], t: [2.5, 2.2] } },
+  trendLine:       {                                         medium: { wl: [2, 3], t: [2, 2.5] },   hard: { wl: [3, 4], t: [2.5, 2.3] } },
+  // question games
+  quarterlyCrunch: { easy: { wl: [1, 2], t: [1.5, 3] },     medium: { wl: [2, 2], t: [2, 3], penalty: "boss" },
+                     hard: { wl: [2, 2], t: [2.5, 3.5], penalty: "boss" } },
+  clientCurveball: { easy: { wl: [1, 1], t: [1.5, 4], flatPay: 6.5 }, medium: { wl: [1, 2], t: [2, 4], penalty: "boss" },
+                     hard: { wl: [2, 2], t: [2.5, 4.5], penalty: "boss" } },
 };
+
+// Client Curveball scoring: Safe 0.8 guaranteed; Risky a coin flip (+EV on purpose)
+const CURVE_SCORING = { safe: 0.8, riskyWin: 1.5, riskyLose: 0.2 };
+
+const flavorsFor = (tier) => Object.keys(LADDER).filter((f) => LADDER[f][tier]);
 
 // Day 1's opening board is a special case handled by the caller (force all
 // 4 slots to "easy"); this table governs every board refresh after that,
@@ -67,26 +61,22 @@ function rollTaskTier(day) {
   return "hard";
 }
 
-/** Create a new task. On Day 1's opening board, pass tier="easy" explicitly. */
+/** Create a task: pick a game that has this tier, roll its workload, derive pay + time limit. */
 function createTask({ id, tier, flavor }) {
-  const config = TASK_TIERS[tier];
-  const baseValue =
-    config.minValue + Math.random() * (config.maxValue - config.minValue);
-
+  const pool = flavorsFor(tier);
+  const f = flavor && LADDER[flavor]?.[tier] ? flavor : pool[Math.floor(Math.random() * pool.length)];
+  const v = LADDER[f][tier], [lo, hi] = v.wl;
+  const workload = lo + Math.floor(Math.random() * (hi - lo + 1));
+  const heaviness = hi === lo ? 0.5 : (workload - lo) / (hi - lo);
+  const [pLo, pHi] = TIER_PAY[tier];
+  const baseValue = v.flatPay ?? pLo + heaviness * (pHi - pLo);
   return {
-    id,
-    tier,
-    flavor: flavor || config.flavors[Math.floor(Math.random() * config.flavors.length)],
+    id, tier, flavor: f, workload,
+    cap: Math.round((v.t[0] + v.t[1] * workload) * 10) / 10, // outer time limit, seconds
+    penalty: v.penalty || null,
     baseValue: Math.round(baseValue * 10) / 10,
-
-    state: "available", // "available" | "inProgress" | "completed" | "failed"
-    ownerId: null,
-    startedAt: null, // ms timestamp, when the player began working it
-
-    // Filled in once resolved:
-    accuracy: null,
-    speed: null,
-    payout: null,
+    state: "available", ownerId: null, startedAt: null,
+    accuracy: null, speed: null, payout: null,
   };
 }
 
@@ -98,15 +88,10 @@ function calculatePayout(task) {
   return Math.round(task.baseValue * task.accuracy * task.speed * 10) / 10;
 }
 
-/** Speed for clock-based tiers (Easy): 1.5x near-instant -> 0.5x at cap. */
+/** Speed: 1.5x if finished in the first 25% of the time limit, down to 0.5x at the limit. */
 function speedFromElapsed(elapsedSeconds, outerCapSeconds) {
   const frac = Math.min(Math.max(elapsedSeconds / outerCapSeconds, 0.25), 1.0);
   return 1.5 - ((frac - 0.25) / 0.75) * (1.5 - 0.5);
-}
-
-/** Speed for Medium's retry-pass model. */
-function speedFromPass(passNumber) {
-  return TASK_TIERS.medium.speedByPass[passNumber] ?? 0.5;
 }
 
 // ---- Boosts & Sabotages --------------------------------------------------
@@ -126,26 +111,31 @@ const SHOP_ODDS_BY_DAY = {
   4: { common: 0.2, uncommon: 0.4, rare: 0.4 },
 };
 
+// v2: every sabotage visibly interrupts the victim (docs/BACKLOG.md "sabotage redesign").
+// everyone: true → can target "👥 Everyone else" (costs 2 of the 3 loadout slots).
 const BOOSTS = [
-  { id: "powerNetworking", tier: "common", effect: "baseValueBonus", amount: 0.10 },
-  { id: "doubleEspresso", tier: "common", effect: "speedBonus", amount: 0.15 },
-  { id: "itFastTrack", tier: "common", effect: "extraMediumRetry", amount: 1 },
-  { id: "executiveAssistant", tier: "uncommon", effect: "widerMediumZones" },
-  { id: "legalPreApproval", tier: "uncommon", effect: "noWrongOnHardChains" },
-  { id: "hrWellnessStipend", tier: "uncommon", effect: "flatEndOfDayBonus" },
-  { id: "aiTokens", tier: "rare", effect: "autoCompleteFirstNEasy", amount: 5 },
-  { id: "bribeTheBoss", tier: "rare", effect: "guaranteeMediumHardSlots", amount: 2 },
+  { id: "powerNetworking", tier: "common" },
+  { id: "doubleEspresso", tier: "common" },
+  { id: "itFastTrack", tier: "common" },
+  { id: "executiveAssistant", tier: "uncommon" },
+  { id: "legalPreApproval", tier: "uncommon" },
+  { id: "hrWellnessStipend", tier: "uncommon" },
+  { id: "overtime", tier: "uncommon" },
+  { id: "aiTokens", tier: "rare" },
+  { id: "bribeTheBoss", tier: "rare" },
+  { id: "bribeHR", tier: "rare" },
 ];
 
 const SABOTAGES = [
-  { id: "budgetFreeze", tier: "common", effect: "targetBaseValuePenalty", amount: -0.10 },
-  { id: "printerJam", tier: "common", effect: "targetSpeedCap" },
-  { id: "replyAllReminder", tier: "common", effect: "targetOuterCapReduction" },
-  { id: "itTicketBacklog", tier: "uncommon", effect: "targetMediumZonesShrink" },
-  { id: "slackGossip", tier: "uncommon", effect: "randomPopupsOnTarget" },
-  { id: "micromanagerWatching", tier: "uncommon", effect: "targetRiskyOutcomeShift" },
-  { id: "performanceReview", tier: "rare", effect: "guaranteeTargetEasySlots", amount: 2 },
-  { id: "frozenPaycheck", tier: "rare", effect: "targetFirstTasksZeroPayout", minCount: 1, maxCount: 2 },
+  { id: "delivery", tier: "common" },
+  { id: "printerJammed", tier: "common" },
+  { id: "passwordExpired", tier: "common" },
+  { id: "surpriseMeeting", tier: "uncommon", everyone: true },
+  { id: "slackGossip", tier: "uncommon", everyone: true },
+  { id: "chattyCoworker", tier: "uncommon", everyone: true },
+  { id: "smokeBreak", tier: "uncommon" },
+  { id: "performanceReview", tier: "rare", everyone: true },
+  { id: "frozenPaycheck", tier: "rare", everyone: true },
 ];
 
 const SHOP_ITEM_CATALOG = [...BOOSTS, ...SABOTAGES];
@@ -178,7 +168,7 @@ const ACCOLADES = [
   { id: "bigSpender", statKey: "walletSpent", minBonus: 20, maxBonus: 35 },
   { id: "perfectionist", statKey: "avgAccuracy", minBonus: 25, maxBonus: 40 },
   { id: "biggestGambler", statKey: "riskyChoicesCount", minBonus: 30, maxBonus: 50 },
-  { id: "mostMistakes", statKey: "mistakesCount", minBonus: 40, maxBonus: 65 },
+  { id: "bossMeetings", statKey: "lockouts", minBonus: 40, maxBonus: 65 }, // "Most 1-on-1s with the Boss" (roast)
   { id: "mostSabotaged", statKey: "sabotagesReceived", minBonus: 40, maxBonus: 65 },
 ];
 
@@ -204,7 +194,8 @@ function createPlayer({ id, name, isBot = false }) {
     // Tracked purely for end-game accolades — see ACCOLADES above.
     stats: {
       tasksCompleted: 0,
-      mistakesCount: 0, // outer-cap fails + wrong Hard answers
+      mistakesCount: 0, // outer-cap fails + wrong answers + conduct mistakes
+      lockouts: 0, // Boss/HR penalty lockouts (the "Most 1-on-1s with the Boss" accolade)
       riskyChoicesCount: 0,
       speedSum: 0,
       speedCount: 0, // -> avgSpeed = speedSum / speedCount
@@ -243,7 +234,11 @@ function createGameState({ hostPlayerId, players }) {
 }
 
 if (typeof module !== "undefined") module.exports = {
-  TASK_TIERS,
+  LADDER,
+  TIER_PAY,
+  LOCKOUT_SECONDS,
+  CURVE_SCORING,
+  flavorsFor,
   TASK_SPAWN_ODDS_BY_DAY,
   ITEM_TIERS,
   SHOP_ODDS_BY_DAY,
@@ -255,7 +250,6 @@ if (typeof module !== "undefined") module.exports = {
   createTask,
   calculatePayout,
   speedFromElapsed,
-  speedFromPass,
   drawShopCards,
   drawAccolades,
   createPlayer,

@@ -12,10 +12,9 @@ or mouse.
 
 🚧 Full design locked — economy, tasks, shop, Day 5, end game, art, screen
 flow, bots, and networking (see `docs/GAME-DESIGN.md`). Ready to build.
-**Phases 1-7 built — the full game is playable, with art**: all 11 minigames, the
-nightly shop, all 16 Boosts/Sabotages, bots, online multiplayer with room
-codes, the Day 5 Projects race, and the Boardroom promotion ceremony. Open
-`index.html` to play solo; see `docs/PROGRESS.md` to play with friends. Progress and next steps:
+**v2 complete**: 26 minigame versions
+across a difficulty ladder, Boss/HR penalties, 9 sabotages you can actually feel, plus everything from v1
+(shop, bots, online multiplayer, Day 5, Boardroom). See `docs/PROGRESS.md`.
 `docs/PROGRESS.md`.
 
 ## Project structure
@@ -33,6 +32,7 @@ get-promoted/
 ├── src/
 │   ├── data-model.js           rules and numbers (tasks, shop, accolades)
 │   ├── net.js                  multiplayer connection (PeerJS)
+│   ├── office-events.js        what sabotages look like on your screen
 │   ├── minigames.js            all 11 minigames
 │   └── game.js                 day loop, board, shop, item effects, bots
 └── index.html                  open this to play

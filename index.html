@@ -58,6 +58,7 @@ h1,h2,h3{margin:0 0 8px}
 .race-bar span{display:block;height:100%;background:var(--easy)}
 .accolade{text-align:center;padding:8px}
 .accolade h3{font-size:24px;margin:6px 0}
+.roast{font-size:18px;font-weight:700;margin:6px 0 0}
 .ready-row.hot{background:#fff3c4}
 .stamp{display:inline-block;margin:10px 0;padding:6px 18px;border:5px solid #c62828;color:#c62828;font-size:34px;font-weight:900;letter-spacing:4px;transform:rotate(-8deg);border-radius:8px;animation:stamp .5s ease-out}
 @keyframes stamp{0%{transform:rotate(-8deg) scale(2.5);opacity:0}100%{transform:rotate(-8deg) scale(1);opacity:1}}
@@ -88,6 +89,81 @@ body.below-boss #app{padding-top:calc(min(150vw,100dvh)*0.34)}
 .desk-items span{background:#fffdf6e6;border:1.5px solid var(--ink);border-radius:6px;padding:0 5px;font-size:10px;line-height:1.35;font-weight:700;white-space:nowrap}
 @media (max-height:700px){.panel .card{padding:8px 12px}.task{min-height:58px;padding:5px 8px;line-height:1.3}.board{gap:6px}}
 .note-line{text-shadow:0 1px 3px #000c}
+#splash{position:fixed;inset:0;z-index:10;background:#0c1220;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#splash img{width:100%;height:100%;object-fit:cover;object-position:top}
+#splash.gone{display:none}
+.mash{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:auto;padding:14px 26px}
+.bins{display:flex;gap:8px}.bins .target{flex:1}
+.item .tag{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);font-size:9px;font-weight:900;padding:1px 4px;border-radius:4px;white-space:nowrap;color:#fff}
+.tag.red{background:#c62828}.tag.gold{background:#b8860b}
+.item.boss-note{background:#e53935;border-radius:6px;padding:2px 4px}
+.inbox.scroll{max-height:176px;overflow-y:auto;border:2px solid #0002;border-radius:8px}
+.email.cat-boss{background:#fff3c4;border-left:5px solid #d4a017}
+.email.cat-client{background:#e3f0ff;border-left:5px solid #378add}
+.email.cat-junk{background:#fde2e2;border-left:5px solid #c62828}
+.copier{position:relative;height:130px;border:2px dashed var(--ink);border-radius:10px;background:#eef}
+.printer{position:absolute;left:10px;top:30px;font-size:54px}
+.tray{position:absolute;left:90px;top:18px;width:120px;height:100px}
+.tray .item{font-size:40px}
+.jam{position:absolute;right:10px;top:40px;background:#c62828;color:#fff;font-weight:900;padding:6px 10px;border-radius:8px;transform:rotate(-6deg)}
+.chart{position:relative;height:170px;margin:8px 0 6px 40px;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+.gridline{position:absolute;left:0;right:0;border-top:1px dashed #0002}
+.gridline span{position:absolute;left:-40px;top:-8px;font-size:10px;width:36px;text-align:right}
+.bars{position:absolute;inset:0;display:flex;justify-content:space-around;align-items:flex-end}
+.barcol{display:flex;flex-direction:column;align-items:center;height:100%;width:40px;position:relative}
+.qlabel{position:absolute;top:-18px;font-size:12px;font-weight:700;white-space:nowrap}
+.barwell{position:relative;width:32px;height:100%}
+.barfill{position:absolute;bottom:0;left:0;right:0;height:0;background:#378ADD;border-radius:4px 4px 0 0}
+.barfill.perfect{background:var(--easy)}.barfill.good{background:var(--med)}.barfill.miss{background:#c62828}
+.tline{position:absolute;left:-6px;right:-6px;border-top:3px dashed #c62828;z-index:1}
+.piewrap{position:relative;width:180px;height:180px;margin:10px auto}
+.pie{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ink)}
+.pie.ghost{border:none;pointer-events:none}.pie.miss{box-shadow:0 0 0 4px #c62828}
+.tick{position:absolute;left:calc(50% - 1px);top:-6px;width:3px;height:14px;background:var(--ink);transform-origin:1px 96px}
+svg.trend{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-scaling-stroke}
+.dot{position:absolute;width:16px;height:16px;margin:0 0 -8px -8px;border-radius:50%;background:var(--hard);border:2px solid #fff;box-shadow:0 0 0 2px var(--ink)}
+.dot.miss{background:#000}
+.qtext{font-size:18px;font-weight:700}
+.overlay.lock{z-index:15;background:rgba(20,24,36,.8)}
+.lockcard{text-align:center}
+.bossface{width:140px;height:140px;margin:0 auto 8px;border-radius:50%;border:3px solid var(--ink);background:url(assets/office-full.jpg) -210px -73px/560px auto no-repeat}
+.hrface{font-size:90px;line-height:1.3}
+.gossip{position:fixed;z-index:20;width:220px}
+.chat{position:fixed;z-index:22;width:260px;background:#fff;border:2px solid #4a154b;border-radius:12px;padding:8px;box-shadow:0 6px 18px #0005;font-size:14px}
+.chathead{font-weight:700;color:#4a154b;margin-bottom:6px}
+.bubble{padding:6px 9px;border-radius:10px;margin:4px 0;max-width:92%}
+.bubble.them{background:#f0eef5}.bubble.me{background:#d7f0dc;margin-left:auto;text-align:right}
+.replies{display:grid;gap:6px;margin-top:6px}
+.replies button{font:inherit;font-size:13px;padding:7px;border-radius:8px;border:2px solid var(--ink);background:#fffdf6;cursor:pointer;text-align:left}
+.overlay.intov{z-index:16;background:rgba(20,24,36,.8)}
+.inticon{font-size:64px;line-height:1.2}
+.pin{font-size:26px;letter-spacing:6px}
+.pinshow{font-size:28px;font-weight:700;letter-spacing:4px;margin:6px 0}
+.keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.keypad button{font:inherit;font-size:20px;font-weight:700;padding:10px 0;border-radius:8px;border:2px solid var(--ink);background:#fffdf6;cursor:pointer}
+.review-banner{background:#c62828;color:#fff;font-weight:800;text-align:center;padding:8px;border-radius:10px;border:2px solid var(--ink)}
+.board.reviewing .task{position:relative}
+.board.reviewing .task::after{content:"REVIEW";position:absolute;right:6px;top:6px;color:#c62828;border:2px solid #c62828;font-size:11px;font-weight:900;padding:0 4px;transform:rotate(8deg);border-radius:4px}
+.sabstamp{position:fixed;left:50%;top:42%;z-index:30;color:#c62828;border:6px solid #c62828;background:#fff8;font-size:40px;font-weight:900;padding:6px 18px;border-radius:10px;letter-spacing:3px;animation:sabstamp 1.4s ease-out forwards;pointer-events:none}
+@keyframes sabstamp{0%{transform:translate(-50%,-50%) rotate(-10deg) scale(2.4);opacity:0}15%{transform:translate(-50%,-50%) rotate(-10deg) scale(1);opacity:1}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) rotate(-10deg) scale(1)}}
+.bonusfloat{position:fixed;z-index:25;transform:translate(-50%,0);color:#2e7d32;font-size:26px;font-weight:900;text-shadow:0 2px 0 #fff,0 0 6px #fff;text-align:center;pointer-events:none;animation:bonusup 1.7s ease-out forwards}
+.bonusfloat small{display:block;font-size:12px;color:#232838}
+@keyframes bonusup{0%{opacity:0;margin-top:10px}15%{opacity:1}100%{opacity:0;margin-top:-70px}}
+@media (prefers-reduced-motion:reduce){.sabstamp,.bonusfloat{animation-duration:.01s}}
+.email:has(.tsel){flex-wrap:wrap}
+.tsel{flex-basis:100%;margin-left:32px;max-width:calc(100% - 32px)}
+.paces{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.paces button{font:inherit;font-weight:700;padding:8px 4px;border-radius:8px;border:2px solid var(--ink);background:#fff;cursor:pointer;line-height:1.2}
+.paces button small{display:block;font-weight:400;font-size:12px;opacity:.7}
+.paces button.on{background:var(--memo)}
+.paces button:disabled{cursor:default;opacity:.85}
+.bossquote{position:absolute;z-index:4;left:61%;top:max(12%,58px);max-width:36%;background:#fff;border:2px solid var(--ink);border-radius:12px;padding:6px 9px;font-size:12px;font-weight:700;line-height:1.3;box-shadow:0 3px 8px #0004;animation:quotein .3s ease-out}
+.bossquote::before{content:"";position:absolute;left:-10px;top:14px;border:6px solid transparent;border-right:9px solid var(--ink)}
+@keyframes quotein{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.failbubble{position:fixed;z-index:12;transform:translate(-50%,-100%);background:#fff;border:3px solid #c62828;color:#c62828;border-radius:14px;padding:4px 10px;font-weight:900;font-size:15px;white-space:nowrap;animation:failpop 2.2s ease-out forwards;pointer-events:none}
+@keyframes failpop{0%{opacity:0;transform:translate(-50%,-60%) scale(.6)}12%{opacity:1;transform:translate(-50%,-100%) scale(1.1)}20%{transform:translate(-50%,-100%) scale(1)}85%{opacity:1}100%{opacity:0;transform:translate(-50%,-120%)}}
+@media (prefers-reduced-motion:reduce){.bossquote,.failbubble{animation:none}}
 .timer{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden}
 .timer div{height:100%;background:var(--memo)}
 </style>
@@ -95,11 +171,13 @@ body.below-boss #app{padding-top:calc(min(150vw,100dvh)*0.34)}
 <body>
 <div id="scene" aria-hidden="true"><div class="scene-box"><img id="sceneImg" src="assets/office-empty.jpg" alt="">
   <div class="strip" id="strip" hidden></div><div class="desk-items" id="deskItems" hidden></div><div id="seats"></div></div></div>
+<div id="splash" role="button" tabindex="0" aria-label="Tap to begin"><img src="assets/landing.jpg" alt="Get Promoted! A Corporate Ascent Game"></div>
 <div id="app"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="src/data-model.js?v=10"></script>
-<script src="src/net.js?v=10"></script>
-<script src="src/minigames.js?v=10"></script>
-<script src="src/game.js?v=10"></script>
+<script src="src/data-model.js?v=16"></script>
+<script src="src/net.js?v=16"></script>
+<script src="src/minigames.js?v=16"></script>
+<script src="src/office-events.js?v=16"></script>
+<script src="src/game.js?v=16"></script>
 </body>
 </html>

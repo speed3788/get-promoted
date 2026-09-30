@@ -88,7 +88,6 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
   - Host-timed slides (4.5s each): career earnings revealed → 3 accolades
     one at a time (standings re-sort, winner highlighted) → PROMOTED stamp
   - Accolades nobody qualifies for (stat is 0) are skipped and replaced
-  - If a bot earned the most, the top human is promoted and the screen says why
   - **The full game loop is complete: lobby → Days 1-4 → Day 5 → Boardroom**
 
 - **Phase 7 — art and polish** ✅ (checked on 4 screen sizes, zero errors)
@@ -117,6 +116,9 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
   every day); active Boosts/Sabotages moved off the panel onto tags on the
   front of the Boss's desk (`showDeskItems()`, `#deskItems`). Checked on
   desktop, iPhone 14, iPhone SE, small Android: no overlap with the panel
+
+- **Bots can be promoted (v=11)** ✅ highest career earnings wins, bot or
+  not; a bot win shows "🤖 Replaced by AI." on the final slide
 
 ## Decisions made during the build (confirm or change)
 
@@ -172,3 +174,109 @@ Or enable GitHub Pages: repo Settings → Pages → Branch: main → Save.
 
 - Guests can't rejoin after disconnecting (by design for now)
 - Base value shown on cards; actual payout can be 0.5x-1.5x of it
+
+## Splash screen (v=12)
+
+Added `assets/landing.jpg` (user-provided title art) as the very first
+screen. `#splash` in index.html sits above everything (z-index 10) until
+tapped/Enter, then `dismissSplash()` in game.js hides it and calls
+`renderMenu()` — previously `renderMenu()` ran immediately on load.
+
+**Note for next session: verify multi-step sed/python edits actually
+wrote to disk before testing.** Two edits in this session silently failed
+(an assertion inside a script aborted the whole script BEFORE its
+`open(...).write()` line ran), so testing against "changes" that were
+never saved. Always re-`grep` for the expected string in the file right
+after an edit script runs, especially multi-replacement ones.
+
+## Asset pack review (skipped)
+
+User found a free pixel-art asset pack ("Icons_Essential" + a "Premade
+Menus"/"DIY_16x16" UI kit) and asked me to review it. Verdict: skip
+entirely — wrong genre (cozy pastel fantasy-RPG style: quests, companions,
+torn-paper journal corners) versus this game's flat-cartoon corporate
+office, and every game-relevant icon (cash, trash, phone, shopping cart)
+already has an emoji doing that job consistently elsewhere. Licenses were
+fine (one CC BY 4.0, one free-use) but style mismatch was the dealbreaker.
+No files added to the project.
+
+## v2 BUILD — Phase 1 of 3 ✅ (v=13): new engine, all 26 games, both penalties
+
+Design source of truth for v2: the "Locked:" sections in docs/BACKLOG.md
+(GAME-DESIGN.md still describes v1 and should be rewritten at the end).
+
+- `data-model.js`: TASK_TIERS replaced by `LADDER` (per-game tiers: workload
+  range, time = base + per × workload, penalty "boss"/"hr", flat pay for Easy
+  Curveball) + `TIER_PAY` (Hard now $35-55) + `flavorsFor(tier)`. createTask
+  rolls workload → pay + cap. Accolade "mostMistakes" → "bossMeetings"
+  (stat `lockouts`, shown as "Most 1-on-1s with the Boss").
+- `minigames.js` rewritten: 10 games that change rules by tier. Reflex:
+  Stapler (M: button hops), Cover Your Tracks (M: signed contracts, H: sort
+  TOP SECRET to shredder), Inbox (M: leave Boss mail, H: check only junk;
+  color/icon tags; scrolling), Post-it (M: Boss note), Copier (one printer
+  tray, jams at 4/2). Charts: Hit the Quota (hold), Budget Pie (click,
+  slices chain), Trend Line (click, M/H only). Questions: Quarterly Crunch
+  (12 generated templates), Client Curveball (40 scenarios). All content
+  banks live at the top of minigames.js (EMAILS, CURVEBALLS, makeMathQ).
+- Penalties: `runner().penalize()` / wrong answers → settle() pays $0,
+  counts a lockout, sets `lockUntil` (4s). hostClaim rejects while locked;
+  clients show `#lockov` (Boss face cropped from office-full.jpg, or 🧑‍💼 HR).
+- Bots: `simulateBot` rewritten for the ladder (Average profile, incl.
+  Boss/HR penalties + the 4s they lose). Day 5 Projects carry workload/cap/penalty.
+- Tested: robot played all 26 versions (all pay; Boss penalty fires on M/H
+  question games); HR + Boss penalties triggered deliberately (both $0, 4s
+  lockout, claims blocked); full solo week to the Boardroom; two-tab online
+  game (guest played a chart game); bots finish Day 5 in ~31s of 60s.
+- Testing tip: /tmp-style autoplay helpers read `#pie[data-size]` for the pie.
+
+### Then: v2 BUILD Phase 3 — polish
+Pace setting (Frantic/Standard/Relaxed; Day 5 fixed 60s — note Day 5 currently
+uses DAY_SECONDS), Boss quote bubble (20-35s cooldown), fail-cuss bubbles for
+everyone, Boardroom quips (winner / 4th / bot-win banks), rewrite GAME-DESIGN.md.
+
+
+## v2 BUILD — Phase 2 of 3 ✅ (v=14): sabotages + boosts
+
+- `data-model.js`: 10 BOOSTS (new: overtime, bribeHR) and 9 SABOTAGES
+  (delivery, printerJammed, passwordExpired, surpriseMeeting*, slackGossip*,
+  chattyCoworker*, smokeBreak, performanceReview*, frozenPaycheck*;
+  * = can target "👥 Everyone else", which costs 2 of 3 loadout slots).
+- NEW `src/office-events.js` (loads before game.js): what players SEE —
+  interruption screens (delivery/meeting/smoke countdowns, hopping Unjam,
+  PIN keypad), Chatty Coworker (CHATS bank, {name} = another player, wrong
+  reply chains a new message + moves the window), Slack Gossip (GOSSIP bank,
+  new pop-up every 12s, each ignored one doubles every 5s, cap 25, always
+  inside the office image), SABOTAGED! stamp, floating "+$X" boost bonus.
+- `game.js` host: `fxFor` rebuilt (targets incl. "*", Bribe HR blocks all and
+  `bribeNotice` tells the holder); `planInterruptions` + `interruptsTick`
+  schedule and fire events (lock-type ones wait until the victim's current
+  task ends; bots just lose the time); `settle` computes the boost-only bonus
+  and flags the frozen stamp; Performance Review = all 4 slots Easy for the
+  first 30s (+ red banner, REVIEW stamps); Overtime = one extra Easy/Medium
+  task at night before shopping; hostCurate enforces slot costs.
+- Renamed: new sabotage shield is "Bribe HR" (existing Rare boost is already
+  called "Bribe the Boss").
+- Tested: every sabotage as the victim, Bribe HR, frozen stamp, boost float,
+  Overtime, slot limits, a full bot week (bots fire ~13 sabotages), and an
+  online guest receiving + clearing Password Expired (sender stays hidden).
+
+## v2 BUILD — Phase 3 of 3 ✅ (v=16): polish — v2 IS COMPLETE
+
+- Pace: menu picker (saved in localStorage) + host can change it in the
+  lobby; `taskDaySeconds()` for Days 1-4, `PROJECT_SECONDS` (60) for Day 5;
+  snapshots carry `dayLen` for everyone's timer. `?day=N` still forces all days.
+- Boss quote bubble (office-events.js `startBossQuotes`, 20-35s).
+- Fail bubbles: host's `failed(p)` picks the word (timeouts + penalties) so
+  every screen matches; drawn above the task panel so bottom-row cubicles
+  are covered too.
+- Boardroom roasts: host picks winner/4th-place or bot-win quips in
+  `startBoardroom` (banks in office-events.js).
+- docs/GAME-DESIGN.md rewritten for v2.
+- Tested: pace (solo, Day 5 stays 60s, online lobby), quotes, fail bubbles
+  matching across two screens, both Boardroom endings, and a complete online
+  match (host + guest + bots) through the Boardroom with zero errors.
+
+## What's next (ideas, nothing scheduled)
+- Real playtest of v2 with friends, especially the chart games' speeds and
+  the Hard lockout rate (both are simulation estimates).
+- Anything the playtest surfaces goes into docs/BACKLOG.md first.

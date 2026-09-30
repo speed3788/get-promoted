@@ -9,7 +9,11 @@
  * Dev tips: ?day=10 for 10-second days; ?local=1 to test multiplayer with two browser tabs.
  */
 const PARAMS = new URLSearchParams(location.search);
-const DAY_SECONDS = +PARAMS.get("day") || 60;
+const DEV_DAY = +PARAMS.get("day") || 0; // dev only: force every day's length (e.g. ?day=10)
+// Host-chosen pace for Days 1-4 (named as a pace, not a difficulty). Day 5 is always 60s.
+const PACES = { frantic: ["🐇 Frantic", 60], standard: ["🚶 Standard", 90], relaxed: ["☕ Relaxed", 120] };
+const PROJECT_SECONDS = DEV_DAY || 60;
+const taskDaySeconds = () => DEV_DAY || PACES[state?.pace || "frantic"][1];
 const LAST_TASK_DAY = 4; // Day 5 (Projects) comes in Phase 5
 const STIPEND = 25, SEATS = 4;
 const PROJECT_TIERS = ["medium", "medium", "hard", "hard"], INTRO_SECONDS = 4;
@@ -19,26 +23,30 @@ const TIER_BORDER = { common: "#b87333", uncommon: "#a8a9ad", rare: "#d4af37" };
 const NAMES = {
   staplerFrenzy: "📎 Stapler Frenzy", coverYourTracks: "🗑️ Cover Your Tracks", inboxZeroRush: "📧 Inbox Zero Rush",
   postItPanic: "📝 Post-it Panic", copierMeltdown: "📠 Copier Meltdown",
-  perfectSend: "📨 Perfect Send", nailThePitch: "🎤 Nail the Pitch", holdTheLine: "☎️ Hold the Line", closingTheDeal: "🤝 Closing the Deal",
-  quarterlyCrunch: "📊 Quarterly Crunch", clientCurveball: "🎯 Client Curveball",
+  hitTheQuota: "📊 Hit the Quota", budgetPie: "🥧 Budget Pie", trendLine: "📈 Trend Line",
+  quarterlyCrunch: "🧮 Quarterly Crunch", clientCurveball: "🎯 Client Curveball",
 };
+const PENALTY_MSG = { boss: "👔 The Boss wants a 1 on 1 with you.", hr: "🧑‍💼 HR wants a chat." };
 const ITEM_INFO = {
   powerNetworking: ["Power Networking", "+10% pay on every task"],
   doubleEspresso: ["Double Espresso", "+15% speed bonus on every task"],
-  itFastTrack: ["IT Fast-Track", "One extra retry on Medium tasks"],
-  executiveAssistant: ["Executive Assistant", "Wider timing zones on Medium tasks"],
-  legalPreApproval: ["Legal Pre-Approval", "Hard tasks drop a wrong answer"],
+  itFastTrack: ["IT Fast-Track", "+2 seconds on every Medium task"],
+  executiveAssistant: ["Executive Assistant", "Wider Perfect/Good bands on chart games"],
+  legalPreApproval: ["Legal Pre-Approval", "Question games drop one wrong answer"],
   hrWellnessStipend: ["HR Wellness Stipend", `+$${STIPEND} at the end of the day`],
+  overtime: ["Overtime", "One extra task tonight while everyone else shops"],
   aiTokens: ["AI Tokens", "Your first 5 Easy tasks finish themselves at max pay"],
   bribeTheBoss: ["Bribe the Boss", "At least 2 Medium or Hard tasks on your board"],
-  budgetFreeze: ["Budget Freeze", "Target earns 10% less"],
-  printerJam: ["Printer Jam", "Target's speed bonus is capped at 1.1x"],
-  replyAllReminder: ["Reply-All Reminder", "Target gets 20% less time per task"],
-  itTicketBacklog: ["IT Ticket Backlog", "Target's Medium timing zones shrink"],
-  slackGossip: ["Slack Gossip", "Gossip pop-ups pile up on the target's screen"],
-  micromanagerWatching: ["Micromanager Watching", "Target's risky calls backfire more often"],
-  performanceReview: ["Performance Review", "Target gets at least 2 Easy tasks on their board"],
-  frozenPaycheck: ["Frozen Paycheck", "Target's first 1 or 2 tasks pay $0"],
+  bribeHR: ["Bribe HR", "Sabotages can't touch you tomorrow"],
+  delivery: ["You Have a Delivery", "2x a day, their board locks 3-5s while they grab a package"],
+  printerJammed: ["Printer's Jammed Again", "2x a day, they tap Unjam 6 times before their next task"],
+  passwordExpired: ["Password Expired", "2x a day, they type a new PIN before their board unlocks"],
+  surpriseMeeting: ["Surprise Meeting", "Once a day, a 5s \"quick sync\" locks their board"],
+  slackGossip: ["Slack Gossip", "Pop-ups that double every 5s if ignored"],
+  chattyCoworker: ["Chatty Coworker", "3x a day, a coworker won't stop messaging until they pick the right reply"],
+  smokeBreak: ["Smoke Break", "They and one random coworker get stuck outside for 5s"],
+  performanceReview: ["Performance Review", "Easy tasks only for their first 30s, under a red banner"],
+  frozenPaycheck: ["Frozen Paycheck", "Their first 1-2 tasks pay $0 (SABOTAGED!)"],
 };
 const ACCOLADE_INFO = {
   overtimeGrinder: ["Overtime Grinder", "Most tasks completed"],
@@ -47,25 +55,23 @@ const ACCOLADE_INFO = {
   bigSpender: ["Big Spender", "Spent the most in the supply closet"],
   perfectionist: ["Perfectionist", "Highest average accuracy"],
   biggestGambler: ["Biggest Gambler", "Made the most risky calls"],
-  mostMistakes: ["Most Mistakes", "The most blunders (a pity bonus)"],
+  bossMeetings: ["Most 1-on-1s with the Boss", "Called into the office the most (a pity bonus)"],
   mostSabotaged: ["Most Sabotaged", "Hit by the most sabotages (a sympathy bonus)"],
 };
 // Cubicle regions on assets/office-full.jpg as % of the image: [left, top, width, height].
 // Seat order matches player order: top-left, top-right, bottom-left, bottom-right.
 const SEAT_BOX = [[1.5, 33.5, 45.5, 27], [53.5, 33.5, 45, 27], [1.5, 61.5, 45.5, 28.5], [53.5, 61.5, 45, 28.5]];
 const SLIDE_SECONDS = 4.5; // Boardroom: time per reveal slide
-const GOSSIP = ["Did you hear who got the corner office?", "Someone microwaved fish AGAIN", "Is the boss's nephew starting Monday??",
-  "The CEO just replied-all 😬", "Who keeps taking the good stapler", "Layoff rumors in #random", "Free bagels in the break room!!"];
 
 const app = document.getElementById("app");
 // Everyone
 let snap = null;   // the snapshot I render from
 let player = null; // MY player inside snap (minigames read player.fx)
 let myId = null, isHost = false, online = false;
-let activeGame = null, startedTaskId = null, localEnd = 0, localIntroEnd = 0;
-let screenKey = "", nightStep = "summary", prevWallets = {}, gossipTimers = [];
+let activeGame = null, startedTaskId = null, localEnd = 0, localIntroEnd = 0, localLockEnd = 0, lockTimer = null;
+let screenKey = "", nightStep = "summary", prevWallets = {}, localReviewEnd = 0;
 // Host only
-let state = null, dayEndsAt = 0, nextId = 1, introEndsAt = 0, projectsStart = 0;
+let state = null, dayEndsAt = 0, nextId = 1, introEndsAt = 0, projectsStart = 0, dayStartAt = 0, intSeq = 0;
 
 const money = (n) => "$" + n.toFixed(2);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -80,45 +86,159 @@ const newTask = (tier) => createTask({ id: nextId++, tier }); // flavor randomiz
 // HOST: rules and state
 // ======================================================================================
 
-/** Everything affecting player p today: their own Boosts + Sabotages aimed at them. */
+/**
+ * Everything affecting player p today: their own Boosts + Sabotages aimed at them
+ * (directly or via "👥 Everyone else"). Bribe HR blocks every incoming sabotage.
+ */
 function fxFor(p) {
   const mine = new Set(p.activeToday.map((a) => a.id));
-  const hits = new Set();
-  state.players.forEach((o) => o.activeToday.forEach((a) => { if (a.targetId === p.id) hits.add(a.id); }));
+  const hits = {};
+  let blocked = 0;
+  state.players.forEach((o) => {
+    if (o === p) return;
+    o.activeToday.forEach((a) => {
+      if (!isSabotage(a.id) || !(a.targetId === p.id || a.targetId === "*")) return;
+      if (mine.has("bribeHR")) { blocked++; return; }
+      hits[a.id] = (hits[a.id] || 0) + 1;
+    });
+  });
+  const has = (id) => !!hits[id];
   return {
-    baseMul: (mine.has("powerNetworking") ? 1.1 : 1) * (hits.has("budgetFreeze") ? 0.9 : 1),
+    baseMul: mine.has("powerNetworking") ? 1.1 : 1,
     speedMul: mine.has("doubleEspresso") ? 1.15 : 1,
-    speedCap: hits.has("printerJam") ? 1.1 : 99,
-    capMul: hits.has("replyAllReminder") ? 0.8 : 1,
-    mediumBonus: mine.has("itFastTrack") ? 2 : 0, // one extra 2s sweep
-    zoneScale: (mine.has("executiveAssistant") ? 1.35 : 1) * (hits.has("itTicketBacklog") ? 0.65 : 1),
+    speedCap: 99,
+    capMul: 1,
+    mediumBonus: mine.has("itFastTrack") ? 2 : 0, // +2s on Medium tasks
+    zoneScale: mine.has("executiveAssistant") ? 1.35 : 1, // wider chart bands
     noWrong: mine.has("legalPreApproval"),
     stipend: mine.has("hrWellnessStipend") ? STIPEND : 0,
     aiTokens: mine.has("aiTokens"),
     bribe: mine.has("bribeTheBoss"),
-    review: hits.has("performanceReview"),
-    gossip: hits.has("slackGossip"),
-    riskyWin: hits.has("micromanagerWatching") ? 0.3 : 0.5,
-    frozen: hits.has("frozenPaycheck"),
+    overtime: mine.has("overtime"),
+    riskyWin: 0.5,
+    review: has("performanceReview"),
+    gossip: has("slackGossip"),
+    chatty: has("chattyCoworker"),
+    frozen: has("frozenPaycheck"),
+    delivery: has("delivery"),
+    printer: has("printerJammed"),
+    password: has("passwordExpired"),
+    meeting: has("surpriseMeeting"),
+    blocked,
   };
+}
+
+/** Everyone sees a censored cuss over this player's cubicle (picked here so all screens match). */
+function failed(p) {
+  p.failSeq = (p.failSeq || 0) + 1;
+  p.failWord = pick(FAIL_WORDS);
+}
+
+/** Non-money boosts that helped on this task (shown under the floating +$X). */
+function boostLabels(p, task, r) {
+  const l = [];
+  if (r.ai) l.push("🤖 AI Tokens");
+  if (p.fx.noWrong && ["quarterlyCrunch", "clientCurveball"].includes(task.flavor)) l.push("⚖️ Legal Pre-Approval");
+  if (p.fx.zoneScale > 1 && ["hitTheQuota", "budgetPie", "trendLine"].includes(task.flavor)) l.push("🗂️ Executive Assistant");
+  if (p.fx.mediumBonus && task.tier === "medium") l.push("⏱️ IT Fast-Track");
+  return l;
+}
+
+/** Sabotage stats for the accolades ("👥 Everyone else" counts once per victim). */
+function countSabotages(p) {
+  p.activeToday.forEach((a) => {
+    if (!a.targetId) return;
+    p.stats.sabotagesUsed++;
+    state.players.forEach((o) => { if (o !== p && (a.targetId === "*" || a.targetId === o.id)) o.stats.sabotagesReceived++; });
+  });
+}
+
+/** Tell Bribe HR holders how many sabotages bounced off them. */
+function bribeNotice(p) {
+  if (p.fx.blocked) p.lastMsg = `🤝 They bribed the right people: ${p.fx.blocked} sabotage${p.fx.blocked > 1 ? "s" : ""} blocked.`;
+}
+
+// ---- Interruption scheduler: plans each sabotage's events for the day, fires them on time ----
+function planInterruptions(dayLen) {
+  const at = () => rand(4, Math.max(6, dayLen - 8));
+  state.players.forEach((p) => {
+    p.events = [];
+    p.interrupt = null;
+    const f = p.fx;
+    if (f.delivery) p.events.push({ at: at(), kind: "delivery", dur: rand(3, 5) }, { at: at(), kind: "delivery", dur: rand(3, 5) });
+    if (f.printer) p.events.push({ at: at(), kind: "printer" }, { at: at(), kind: "printer" });
+    if (f.password) p.events.push({ at: at(), kind: "password" }, { at: at(), kind: "password" });
+    if (f.meeting) p.events.push({ at: at(), kind: "meeting", dur: 5 });
+    if (f.chatty) for (let i = 0; i < 3; i++) p.events.push({ at: at(), kind: "chatty" });
+  });
+  // Smoke Break: the target + one random coworker (never the sender), stuck outside together.
+  const bribed = (x) => x.activeToday.some((a) => a.id === "bribeHR");
+  state.players.forEach((o) => o.activeToday.forEach((a) => {
+    const target = a.id === "smokeBreak" && byId(a.targetId);
+    if (!target || bribed(target)) return;
+    const partner = pick(state.players.filter((x) => x !== o && x !== target && !bribed(x)));
+    const t = at();
+    target.events.push({ at: t, kind: "smoke", dur: 5, with: partner?.name });
+    if (partner) partner.events.push({ at: t, kind: "smoke", dur: 5, with: target.name });
+  }));
+  state.players.forEach((p) => p.events.sort((x, y) => x.at - y.at));
+  dayStartAt = performance.now();
+}
+
+function interruptsTick() {
+  const now = performance.now(), el = (now - dayStartAt) / 1000;
+  let changed = false;
+  state.players.forEach((p) => {
+    if (p.interrupt?.until && now >= p.interrupt.until) { p.interrupt = null; changed = true; }
+    const ev = p.events?.[0];
+    if (!ev || ev.at > el || p.interrupt) return;
+    const busy = state.phase === "task" && (p.currentTask || p.bot?.current);
+    if (busy && ev.kind !== "chatty" && ev.kind !== "smoke") return; // waits until the current task is done
+    p.events.shift();
+    changed = true;
+    if (p.isBot) { // bots just lose the time
+      const lost = ({ delivery: ev.dur, meeting: 5, smoke: 5, printer: 2.5, password: 3, chatty: 2 }[ev.kind] || 3) * 1000;
+      if (p.bot?.current) p.bot.current.doneAt += lost; else if (p.bot) p.bot.nextAt = Math.max(p.bot.nextAt || 0, now) + lost;
+      return;
+    }
+    if (ev.kind === "chatty") { p.chatSeq = (p.chatSeq || 0) + 1; return; }
+    p.interrupt = { id: ++intSeq, kind: ev.kind, with: ev.with, until: now + (ev.dur || 20) * 1000,
+      timed: !!ev.dur, pin: ev.kind === "password" ? String(rint(1000, 9999)) : undefined };
+  });
+  if (changed) sync();
 }
 
 /** Apply a minigame result + item effects and bank the payout. Returns null on failure. */
 function settle(p, task, r) {
   p.stats.riskyChoicesCount += r.risky || 0;
-  if (!r.success) { p.stats.mistakesCount++; return null; }
+  if (!r.success) { p.stats.mistakesCount++; failed(p); return null; }
   p.stats.mistakesCount += r.mistakes || 0;
+  if (r.penalty) failed(p);
+  if (r.penalty) { // Boss/HR penalty: the whole task pays $0 and the player is locked out
+    p.stats.lockouts = (p.stats.lockouts || 0) + 1;
+    p.lockUntil = performance.now() + LOCKOUT_SECONDS * 1000;
+    p.lockKind = r.penalty;
+    task.state = "completed";
+    return { pay: 0, penalty: r.penalty };
+  }
+  const plain = Math.round(task.baseValue * r.accuracy * Math.min(r.speed, p.fx.speedCap) * 10) / 10; // pay with no boosts
   task.accuracy = r.accuracy;
   task.speed = Math.min(r.speed * p.fx.speedMul, p.fx.speedCap);
   task.state = "completed";
   task.baseValue *= p.fx.baseMul;
   const frozen = p.frozenLeft > 0;
-  if (frozen) { p.frozenLeft--; task.baseValue = 0; }
-  return { pay: applyTaskResult(p, task), frozen };
+  if (frozen) { p.frozenLeft--; task.baseValue = 0; p.flashSeq = (p.flashSeq || 0) + 1; } // big red SABOTAGED! stamp
+  const pay = applyTaskResult(p, task), labels = boostLabels(p, task, r);
+  if (!frozen && (pay - plain > 0.049 || labels.length)) { // floating +$X: only the boost's extra money
+    p.bonusSeq = (p.bonusSeq || 0) + 1;
+    p.bonus = { amt: Math.max(0, Math.round((pay - plain) * 10) / 10), labels };
+  }
+  return { pay, frozen };
 }
 
 function report(p, out, task, note) {
   p.lastMsg = !out ? "Time's up. That task went back on the board."
+    : out.penalty ? `${PENALTY_MSG[out.penalty]} $0 for that one.`
     : out.frozen ? "🧊 Frozen paycheck. That one paid $0."
     : `+${money(out.pay)}, accuracy ${Math.round(task.accuracy * 100)}%, speed ${task.speed.toFixed(2)}x` + (note ? `. ${note}` : "");
 }
@@ -142,12 +262,14 @@ function returnToPool(task) {
  */
 function viewFor(p) {
   const view = state.board.map((t, i) => ({ t, i, priv: false }));
-  const up = p.fx?.bribe && !p.fx?.review, down = p.fx?.review && !p.fx?.bribe;
+  const reviewing = p.fx?.review && state.phase === "task" && performance.now() - dayStartAt < 30000;
+  const up = p.fx?.bribe && !reviewing, down = reviewing; // Performance Review wins while it lasts
   if (!up && !down) return view;
   const bad = (t) => (up ? t.tier === "easy" : t.tier !== "easy");
   let good = view.filter((e) => !bad(e.t)).length;
+  const need = down ? 4 : 2; // review: ALL 4 slots Easy; Bribe the Boss: at least 2 Medium/Hard
   for (const e of view) {
-    if (good >= 2) break;
+    if (good >= need) break;
     if (!bad(e.t)) continue;
     let pt = p.priv[e.i];
     if (!pt || pt.coversId !== e.t.id) { // regenerate if the shared task underneath changed
@@ -181,11 +303,13 @@ function startDay(day) {
     p.aiLeft = p.fx.aiTokens ? 5 : 0;
     Object.assign(p, { currentTask: null, priv: {}, lastMsg: "" });
     if (p.isBot) p.bot = { nextAt: now + rand(600, 1400), current: null };
-    p.activeToday.forEach((a) => { if (a.targetId) { p.stats.sabotagesUsed++; byId(a.targetId).stats.sabotagesReceived++; } });
+    countSabotages(p);
+    bribeNotice(p);
   });
+  planInterruptions(taskDaySeconds());
   // Day 1 opening board is guaranteed all-Easy; everything after follows day odds.
   state.board = [0, 1, 2, 3].map(() => newTask(day === 1 ? "easy" : rollTaskTier(day)));
-  dayEndsAt = now + DAY_SECONDS * 1000;
+  dayEndsAt = now + taskDaySeconds() * 1000;
   sync();
 }
 
@@ -198,6 +322,12 @@ function endDay() {
     if (p.fx.stipend) { p.wallet += p.fx.stipend; p.careerEarnings += p.fx.stipend; }
   });
   state.players.forEach((p) => {
+    p.interrupt = null;
+    if (p.fx.overtime) { // ⏰ Overtime: one more task (random Easy or Medium) while everyone shops
+      const t = Object.assign(newTask(Math.random() < 0.5 ? "easy" : "medium"), { state: "inProgress", ownerId: p.id, overtime: true });
+      if (p.isBot) { const sim = simulateBot(p, t); report(p, settle(p, t, sim.result), t, "⏰ Overtime"); }
+      else p.currentTask = t;
+    }
     if (p.isBot) { botShop(p); botCurate(p); p.ready = true; }
     else { p.ready = false; state.shop[p.id] = priced(drawShopCards(state.day)); }
   });
@@ -223,11 +353,12 @@ function startProjects() {
     p.aiLeft = 0; // AI Tokens only work on Easy tasks; there are none today
     Object.assign(p, { currentTask: null, lastMsg: "", proj: { k: 0, pays: [], done: false, bonus: 0, saved: 0 } });
     if (p.isBot) p.bot = { current: null };
-    p.activeToday.forEach((a) => { if (a.targetId) { p.stats.sabotagesUsed++; byId(a.targetId).stats.sabotagesReceived++; } });
+    countSabotages(p);
+    bribeNotice(p);
   });
   state.projects = PROJECT_TIERS.map((tier) => {
     const t = newTask(tier);
-    return { tier: t.tier, flavor: t.flavor, baseValue: t.baseValue };
+    return { tier: t.tier, flavor: t.flavor, baseValue: t.baseValue, workload: t.workload, cap: t.cap, penalty: t.penalty };
   });
   introEndsAt = performance.now() + INTRO_SECONDS * 1000;
   sync();
@@ -236,7 +367,8 @@ function startProjects() {
 function beginProjects() {
   state.phase = "projects";
   projectsStart = performance.now();
-  dayEndsAt = projectsStart + DAY_SECONDS * 1000;
+  planInterruptions(PROJECT_SECONDS); // Day 5 interruptions start when the race does
+  dayEndsAt = projectsStart + PROJECT_SECONDS * 1000;
   state.players.forEach((p) => { if (!p.isBot) p.currentTask = projectTask(p); });
   sync();
 }
@@ -250,6 +382,7 @@ function projectTask(p) {
 function projectDone(p, out, task, note) {
   p.proj.pays.push(out ? out.pay : 0);
   p.lastMsg = !out ? "Project failed. No pay for that one."
+    : out.penalty ? `${PENALTY_MSG[out.penalty]} $0 on project ${task.project + 1}.`
     : out.frozen ? "🧊 Frozen paycheck. That one paid $0."
     : `+${money(out.pay)} on project ${task.project + 1}` + (note ? `. ${note}` : "");
   p.currentTask = null;
@@ -262,7 +395,7 @@ function finishProjects(p) {
   const pr = p.proj, total = pr.pays.reduce((a, b) => a + b, 0);
   const secs = (performance.now() - projectsStart) / 1000;
   pr.done = true;
-  pr.saved = Math.max(0, Math.floor(DAY_SECONDS - secs));
+  pr.saved = Math.max(0, Math.floor(PROJECT_SECONDS - secs));
   pr.bonus = (total * pr.saved) / 100;
   p.wallet += pr.bonus;
   p.careerEarnings += pr.bonus;
@@ -323,11 +456,11 @@ function startBoardroom() {
     winner.careerEarnings += bonus;
     awards.push({ id: a.id, winnerId: winner.id, bonus });
   }
-  // Only humans can be promoted, even if a bot earned the most.
-  const humans = state.players.filter((p) => !p.isBot);
-  const winnerId = humans.sort((x, y) => y.careerEarnings - x.careerEarnings)[0].id;
-  const topId = [...state.players].sort((x, y) => y.careerEarnings - x.careerEarnings)[0].id;
-  state.boardroom = { step: 0, base, awards, winnerId, topId, nextAt: performance.now() + SLIDE_SECONDS * 1000 };
+  // Highest career earnings wins the promotion — bots included (playtest feedback).
+  const winnerId = [...state.players].sort((x, y) => y.careerEarnings - x.careerEarnings)[0].id;
+  const champ = byId(winnerId), last = [...state.players].sort((x, y) => x.careerEarnings - y.careerEarnings)[0];
+  const quips = champ.isBot ? { bot: pick(BOT_WIN_QUIPS) } : { winner: pick(WINNER_QUIPS), loser: pick(LOSER_QUIPS), loserId: last.id };
+  state.boardroom = { step: 0, base, awards, winnerId, quips, nextAt: performance.now() + SLIDE_SECONDS * 1000 };
   sync();
 }
 
@@ -338,13 +471,15 @@ function hostAction(p, m) {
   else if (m.t === "result") hostResult(p, m.taskId, m.r);
   else if (m.t === "buy") hostBuy(p, m.i);
   else if (m.t === "curate") hostCurate(p, m.picks);
+  else if (m.t === "pace" && p.id === myId && state.phase === "lobby" && PACES[m.v]) state.pace = m.v;
+  else if (m.t === "clearInterrupt" && p.interrupt && !p.interrupt.timed && p.interrupt.id === m.id) p.interrupt = null;
   else if (m.t === "start" && p.id === myId && state.phase === "lobby") { fillBots(); return startDay(1); }
   else if (m.t === "again" && p.id === myId && state.phase === "boardroom") return resetMatch();
   sync();
 }
 
 function hostClaim(p, taskId) {
-  if (state.phase !== "task" || p.currentTask) return;
+  if (state.phase !== "task" || p.currentTask || p.interrupt || (p.lockUntil || 0) > performance.now()) return; // locked out / interrupted
   const e = viewFor(p).find((x) => x.t.id === taskId);
   if (!e) return; // someone else grabbed it first
   const task = e.priv ? e.t : takeTask(e.i);
@@ -352,7 +487,7 @@ function hostClaim(p, taskId) {
   Object.assign(task, { state: "inProgress", ownerId: p.id });
   if (task.tier === "easy" && p.aiLeft > 0) {
     p.aiLeft--;
-    return report(p, settle(p, task, { success: true, accuracy: 1, speed: 1.5 }), task, `🤖 AI handled it (${p.aiLeft} left)`);
+    return report(p, settle(p, task, { success: true, accuracy: 1, speed: 1.5, ai: true }), task, `🤖 AI handled it (${p.aiLeft} left)`);
   }
   p.currentTask = task;
 }
@@ -363,11 +498,12 @@ function hostResult(p, taskId, r) {
   p.currentTask = null;
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, +v || 0));
   const safe = { success: !!r.success, accuracy: clamp(r.accuracy, 0, 1.5), speed: clamp(r.speed, 0.5, 1.5),
-    mistakes: clamp(r.mistakes, 0, 3), risky: clamp(r.risky, 0, 3), note: r.note ? String(r.note).slice(0, 80) : "" };
+    mistakes: clamp(r.mistakes, 0, 10), risky: clamp(r.risky, 0, 3), note: r.note ? String(r.note).slice(0, 80) : "",
+    penalty: task.penalty && r.penalty ? task.penalty : null }; // only games that carry a penalty can trigger one
   const out = settle(p, task, safe);
   if (state.phase === "projects") return projectDone(p, out, task, safe.note);
-  if (!out) returnToPool(task);
-  report(p, out, task, safe.note);
+  if (!out && state.phase === "task") returnToPool(task);
+  report(p, out, task, task.overtime ? `⏰ Overtime${safe.note ? ". " + safe.note : ""}` : safe.note);
 }
 
 function hostBuy(p, i) {
@@ -380,8 +516,18 @@ function hostBuy(p, i) {
 function hostCurate(p, picks) {
   if (state.phase !== "night" || p.ready || !Array.isArray(picks)) return;
   const seen = new Set(), rivals = state.players.filter((o) => o !== p).map((o) => o.id);
-  p.activeToday = picks.filter((x) => p.inventory.includes(x.id) && !seen.has(x.id) && seen.add(x.id)).slice(0, 3)
-    .map((x) => ({ id: x.id, targetId: isSabotage(x.id) ? (rivals.includes(x.targetId) ? x.targetId : rivals[0]) : undefined }));
+  let slots = 0;
+  p.activeToday = [];
+  for (const x of picks) {
+    if (!p.inventory.includes(x.id) || seen.has(x.id)) continue;
+    const def = SABOTAGES.find((s) => s.id === x.id);
+    const everyone = def?.everyone && x.targetId === "*";
+    const cost = everyone ? 2 : 1;
+    if (slots + cost > 3) continue;
+    seen.add(x.id);
+    slots += cost;
+    p.activeToday.push({ id: x.id, targetId: def ? (everyone ? "*" : rivals.includes(x.targetId) ? x.targetId : rivals[0]) : undefined });
+  }
   useUp(p);
   p.ready = true;
   checkAllReady();
@@ -389,7 +535,7 @@ function hostCurate(p, picks) {
 
 function resetMatch() {
   const humans = state.players.filter((p) => !p.isBot).map((p) => createPlayer({ id: p.id, name: p.name }));
-  state = Object.assign(createGameState({ hostPlayerId: myId, players: humans }), { phase: "lobby", code: state.code, shop: {} });
+  state = Object.assign(createGameState({ hostPlayerId: myId, players: humans }), { phase: "lobby", code: state.code, shop: {}, pace: state.pace });
   if (!online) { fillBots(); return startDay(1); }
   sync();
 }
@@ -421,7 +567,8 @@ function onClientLeave(id) {
 function snapshotFor(pid) {
   const me = byId(pid);
   return {
-    day: state.day, phase: state.phase, code: state.code || null, hostId: myId,
+    day: state.day, phase: state.phase, code: state.code || null, hostId: myId, pace: state.pace || "frantic",
+    dayLen: state.phase === "projects" || state.phase === "projectsIntro" ? PROJECT_SECONDS : taskDaySeconds(),
     timeLeft: ["task", "projects"].includes(state.phase) ? Math.max(0, (dayEndsAt - performance.now()) / 1000) : 0,
     introLeft: state.phase === "projectsIntro" ? Math.max(0, (introEndsAt - performance.now()) / 1000) : 0,
     projects: state.projects || [],
@@ -429,8 +576,10 @@ function snapshotFor(pid) {
     view: state.phase === "task" ? viewFor(me).map((e) => e.t) : [],
     shop: state.shop?.[pid] || [],
     players: state.players.map((p) => p.id === pid
-      ? { ...p, bot: undefined, priv: undefined, busy: !!p.currentTask }
-      : { id: p.id, name: p.name, isBot: p.isBot, wallet: p.wallet, ready: p.ready, busy: !!(p.currentTask || p.bot?.current),
+      ? { ...p, bot: undefined, priv: undefined, busy: !!p.currentTask, lockLeft: Math.max(0, ((p.lockUntil || 0) - performance.now()) / 1000),
+          interrupt: p.interrupt && { ...p.interrupt, left: Math.max(0, (p.interrupt.until - performance.now()) / 1000) },
+          reviewLeft: p.fx?.review && state.phase === "task" ? Math.max(0, 30 - (performance.now() - dayStartAt) / 1000) : 0 }
+      : { id: p.id, name: p.name, isBot: p.isBot, wallet: p.wallet, ready: p.ready, busy: !!(p.currentTask || p.bot?.current), failSeq: p.failSeq || 0, failWord: p.failWord,
           proj: p.proj && { k: p.proj.k, done: p.proj.done } }),
   };
 }
@@ -469,43 +618,46 @@ function botsTick() {
 
 function botPick(b) {
   const idx = [0, 1, 2, 3];
-  const pref = b.fx.bribe ? idx.filter((i) => state.board[i].tier !== "easy") : idx;
+  const reviewing = b.fx.review && performance.now() - dayStartAt < 30000;
+  const pref = reviewing ? idx.filter((i) => state.board[i].tier === "easy") : b.fx.bribe ? idx.filter((i) => state.board[i].tier !== "easy") : idx;
   const pool = pref.length ? pref : idx;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-/** How long the bot takes and how well it does, with its item effects applied. */
+/**
+ * How long the bot takes and how well it does, with item effects applied. Uses the
+ * simulation-tested "Average" profile from the v2 ladder simulation (docs/BACKLOG.md).
+ */
 function simulateBot(b, t) {
-  const fx = b.fx, R = Math.random, rushed = fx.capMul < 1;
-  const extra = fx.gossip ? 0.5 : 0;
-  if (t.tier === "easy") {
-    if (b.aiLeft > 0) { b.aiLeft--; return { secs: 0.4, result: { success: true, accuracy: 1, speed: 1.5 } }; }
-    const cap = TASK_TIERS.easy.outerCapSeconds * fx.capMul, tt = rand(1.5, 3) + extra;
-    if (R() < 0.05 || tt > cap) return { secs: Math.min(tt, cap), result: { success: false } };
-    return { secs: tt, result: { success: true, accuracy: 1, speed: speedFromElapsed(tt, cap) } };
+  const fx = b.fx, R = Math.random;
+  const cap = (t.cap + (t.tier === "medium" ? fx.mediumBonus : 0)) * fx.capMul;
+  if (t.tier === "easy" && b.aiLeft > 0) { b.aiLeft--; return { secs: 0.4, result: { success: true, accuracy: 1, speed: 1.5 } }; }
+  const secs = { easy: 0.55, medium: 0.65, hard: 0.75 }[t.tier] * rand(0.85, 1.15) * cap + (fx.gossip ? 0.5 : 0);
+  if (R() < 0.06 || secs > cap) return { secs: Math.min(secs, cap), result: { success: false } };
+  if (t.penalty) { // Boss (wrong answer) or HR (conduct slip) — sits out the lockout too
+    const pen = t.penalty === "boss" ? { medium: 0.25, hard: 0.4 }[t.tier] * (fx.noWrong ? 0.6 : 1) : 0.12;
+    if (R() < pen) return { secs: secs + LOCKOUT_SECONDS, result: { success: true, accuracy: 0, speed: 0.5, mistakes: 1, penalty: t.penalty } };
   }
-  if (t.tier === "medium") {
-    const r = R(), pass = r < 0.5 ? 1 : r < 0.85 ? 2 : 3;
-    const failP = 0.1 + (rushed ? 0.1 : 0) - (fx.mediumBonus ? 0.05 : 0);
-    const secs = pass * 2 + rand(-0.3, 0.3) + extra;
-    if (R() < failP) return { secs, result: { success: false } };
-    const perfP = Math.min(0.9, Math.max(0.1, 0.5 * fx.zoneScale));
-    return { secs, result: { success: true, accuracy: R() < perfP ? 1 : 0.7, speed: speedFromPass(pass) } };
+  let accuracy = 1, risky = 0, mistakes = 0;
+  if (["hitTheQuota", "budgetPie", "trendLine"].includes(t.flavor)) {
+    const pp = Math.min(0.9, 0.5 * fx.zoneScale);
+    let sum = 0;
+    for (let i = 0; i < t.workload; i++) sum += R() < pp ? 1 : 0.7;
+    accuracy = sum / t.workload;
+  } else if (t.flavor === "copierMeltdown") {
+    mistakes = R() < 0.3 ? 1 : 0;
+    accuracy = 1 - 0.25 * mistakes;
+  } else if (t.flavor === "quarterlyCrunch" && t.tier === "easy") {
+    accuracy = R() < 0.85 ? 1 : 0.5;
+  } else if (t.flavor === "clientCurveball") {
+    let sum = 0;
+    for (let i = 0; i < t.workload; i++) {
+      if (R() < 0.5) sum += CURVE_SCORING.safe;
+      else { risky++; sum += R() < fx.riskyWin ? CURVE_SCORING.riskyWin : CURVE_SCORING.riskyLose; }
+    }
+    accuracy = sum / t.workload;
   }
-  const cap = TASK_TIERS.hard.outerCapSeconds * fx.capMul, tt = rand(5, 7) + extra; // ~2.5-3.5s per question
-  if (R() < 0.05 || tt > cap) return { secs: Math.min(tt, cap), result: { success: false } };
-  let sum = 0, mistakes = 0, risky = 0;
-  const Q = TASK_TIERS.hard.questionsPerChain;
-  for (let k = 0; k < Q; k++) {
-    const r = R();
-    if (t.flavor === "quarterlyCrunch") {
-      if (r < (fx.noWrong ? 0.85 : 0.7)) sum += 1; else mistakes++;
-    } else if (r < 0.55) sum += 0.8;
-    else if (r < 0.85) { risky++; sum += R() < fx.riskyWin ? 1.5 : 0.2; }
-    else if (fx.noWrong) sum += 0.8;
-    else mistakes++;
-  }
-  return { secs: tt, result: { success: true, accuracy: sum / Q, speed: speedFromElapsed(tt, cap), mistakes, risky } };
+  return { secs, result: { success: true, accuracy, speed: speedFromElapsed(secs, cap), mistakes, risky } };
 }
 
 function botShop(b) {
@@ -556,7 +708,7 @@ async function startHosting(name, withNet) {
   myId = "host";
   online = withNet;
   state = Object.assign(createGameState({ hostPlayerId: myId, players: [createPlayer({ id: myId, name })] }),
-    { phase: "lobby", code: null, shop: {} });
+    { phase: "lobby", code: null, shop: {}, pace: PACES[localStorage.getItem("gp-pace")] ? localStorage.getItem("gp-pace") : "frantic" });
   if (!withNet) { fillBots(); return startDay(1); }
   renderStatus("Setting up your room…");
   for (let tries = 0; ; tries++) {
@@ -598,6 +750,10 @@ async function joinGame(name, code) {
 function applySnapshot(s) {
   snap = s;
   player = s.players.find((p) => p.id === myId);
+  if (player?.lockLeft > 0) localLockEnd = Math.max(localLockEnd, performance.now() + player.lockLeft * 1000);
+  localReviewEnd = player?.reviewLeft > 0 ? performance.now() + player.reviewLeft * 1000 : 0;
+  onOfficeEvents();
+  checkFailBubbles();
   if (s.phase === "task" || s.phase === "projects") localEnd = performance.now() + s.timeLeft * 1000;
   if (s.phase === "projectsIntro") localIntroEnd = performance.now() + s.introLeft * 1000;
   render();
@@ -606,8 +762,10 @@ function applySnapshot(s) {
 function render() {
   if (!snap || !player) return;
   const live = snap.phase === "task" || snap.phase === "projects";
+  const overtime = snap.phase === "night" && player.currentTask?.overtime;
   setScene(live);
-  if (!live) { cancelMinigame(); stopGossip(); }
+  if (!live) { stopGossip(); stopChats(); stopBossQuotes(); }
+  if (!live && !overtime) cancelMinigame();
   if (snap.phase === "lobby") renderLobby();
   else if (snap.phase === "task") renderDay();
   else if (snap.phase === "projectsIntro") renderIntro();
@@ -616,8 +774,28 @@ function render() {
   else if (snap.phase === "boardroom") renderBoardroom();
 }
 
+/** The "Boss wants a 1 on 1" / "HR wants a chat" lockout screen, on my own screen only. */
+function updateLockScreen() {
+  const left = (localLockEnd - performance.now()) / 1000;
+  let el = document.getElementById("lockov");
+  const live = snap && (snap.phase === "task" || snap.phase === "projects");
+  if (left <= 0 || !live) { el?.remove(); return; }
+  if (!el) {
+    const kind = player?.lockKind === "hr" ? "hr" : "boss";
+    el = document.createElement("div");
+    el.id = "lockov";
+    el.className = "overlay lock";
+    el.innerHTML = `<div class="card lockcard">${kind === "boss" ? '<div class="bossface"></div>' : '<div class="hrface">🧑‍💼</div>'}
+      <h2>${kind === "boss" ? "The Boss wants a 1 on 1 with you." : "HR wants a chat."}</h2>
+      <p class="muted">That task paid $0.</p><div class="code-big" id="lockc"></div></div>`;
+    document.body.appendChild(el);
+  }
+  el.querySelector("#lockc").textContent = Math.ceil(left) + "s";
+}
+
 /** Countdown for everyone; the host also runs bots and ends the day. */
 function tick() {
+  updateLockScreen();
   if (snap?.phase === "projectsIntro") {
     const el = document.getElementById("introCount");
     if (el) el.textContent = Math.max(1, Math.ceil((localIntroEnd - performance.now()) / 1000));
@@ -626,8 +804,11 @@ function tick() {
     const left = Math.max(0, (localEnd - performance.now()) / 1000);
     const t = document.getElementById("timeLeft"), b = document.getElementById("timeBar");
     if (t) t.textContent = Math.ceil(left) + "s";
-    if (b) b.style.width = (left / DAY_SECONDS) * 100 + "%";
+    if (b) b.style.width = (left / (snap.dayLen || 60)) * 100 + "%";
   }
+  if (isHost && (state?.phase === "task" || state?.phase === "projects")) interruptsTick();
+  updateInterruptScreen();
+  updateReviewBanner();
   if (isHost && state?.phase === "task") {
     botsTick();
     if (performance.now() >= dayEndsAt) endDay();
@@ -659,6 +840,8 @@ function renderMenu(err = "") {
     <p>Grab tasks from the boss, finish them fast, bank the cash. Spend it each night on boosts for you and sabotages for your coworkers.</p>
     <label class="muted" for="name">Your name</label>
     <input id="name" class="text" maxlength="12" value="${esc(saved)}" placeholder="Jordan">
+    <p class="muted" style="margin:0 0 4px">Day length (when you host or play solo)</p>
+    <div class="paces" id="paces">${Object.entries(PACES).map(([k, [label, s]]) => `<button data-p="${k}" class="${k === (localStorage.getItem("gp-pace") || "frantic") ? "on" : ""}">${label}<small>${s / 60 === 1 ? "1:00" : s === 90 ? "1:30" : "2:00"}</small></button>`).join("")}</div>
     <div class="stack"><button class="big" id="solo">Play solo vs bots</button><button class="big" id="host">Host a game</button></div>
     <div class="join"><label class="muted" for="code">Have a room code?</label>
     <input id="code" class="text code-in" maxlength="6" placeholder="CORP84" autocapitalize="characters">
@@ -666,6 +849,10 @@ function renderMenu(err = "") {
     <p class="err">${esc(err)}</p>
     ${Net.local ? '<p class="muted">Local test mode: open a second tab with ?local=1 to join.</p>' : ""}</div>`;
   const name = () => { const n = cleanName(document.getElementById("name").value); localStorage.setItem("gp-name", n); return n; };
+  document.querySelectorAll("#paces button").forEach((b) => (b.onclick = () => {
+    localStorage.setItem("gp-pace", b.dataset.p);
+    document.querySelectorAll("#paces button").forEach((x) => x.classList.toggle("on", x === b));
+  }));
   document.getElementById("solo").onclick = () => startHosting(name(), false);
   document.getElementById("host").onclick = () => startHosting(name(), true);
   document.getElementById("join").onclick = () => {
@@ -687,10 +874,13 @@ function renderLobby() {
     <div class="code-big">${esc(snap.code || "")}</div>
     ${me ? '<button class="small" id="copy">Copy code</button>' : ""}
     <div class="floor" style="margin:12px 0">${seats}</div>
+    <p class="muted" style="margin:0 0 4px">Day length${me ? "" : " (the host picks)"}</p>
+    <div class="paces" id="lpaces">${Object.entries(PACES).map(([k, [label]]) => `<button data-p="${k}" class="${k === snap.pace ? "on" : ""}" ${me ? "" : "disabled"}>${label}</button>`).join("")}</div>
     ${me ? '<button class="big" id="start">Start the week</button>' : '<p class="muted">Waiting for the host to start…</p>'}</div>`;
   if (me) {
     document.getElementById("copy").onclick = (e) => { navigator.clipboard?.writeText(snap.code); e.target.textContent = "Copied"; };
     document.getElementById("start").onclick = () => act({ t: "start" });
+    document.querySelectorAll("#lpaces button").forEach((b) => (b.onclick = () => { localStorage.setItem("gp-pace", b.dataset.p); act({ t: "pace", v: b.dataset.p }); }));
   }
 }
 
@@ -710,10 +900,12 @@ function renderDay() {
   if (screenKey !== key) {
     screenKey = key;
     app.innerHTML = hudHtml(`Day ${snap.day} of 5`) + `<div class="panel">
+      <div class="review-banner" id="review" hidden></div>
       <div class="card"><b>Pick a task</b><div class="muted" id="msg"></div></div>
       <div class="board" id="board"></div></div>`;
     startedTaskId = null;
     showDeskItems();
+    startBossQuotes();
     if (player.fx?.gossip) startGossip();
   }
   updateStage((p, pop) => `<span class="${pop ? "pop" : ""}">💰${money(p.wallet)}</span>`);
@@ -746,9 +938,19 @@ function showDeskItems() {
   el.innerHTML = items.map((a) => `<span>${isSabotage(a.id) ? "📉" : "📈"} ${ITEM_INFO[a.id][0]}</span>`).join("");
 }
 
+/** 📋 Performance Review: red banner with a countdown, REVIEW stamps on the task cards. */
+function updateReviewBanner() {
+  const el = document.getElementById("review"), board = document.getElementById("board");
+  if (!el) return;
+  const left = (localReviewEnd - performance.now()) / 1000, on = left > 0 && snap?.phase === "task";
+  el.hidden = !on;
+  board?.classList.toggle("reviewing", on);
+  if (on) el.textContent = `📋 UNDER REVIEW: Easy tasks only (${Math.ceil(left)}s)`;
+}
+
 /** Compact top bar that floats over the office wall (kept short so the Boss stays visible). */
 function hudHtml(title) {
-  return `<div class="card hud"><div class="hud-row"><span>${title}</span><span id="timeLeft">${DAY_SECONDS}s</span></div>
+  return `<div class="card hud"><div class="hud-row"><span>${title}</span><span id="timeLeft">${snap.dayLen}s</span></div>
     <div class="timer"><div id="timeBar" style="width:100%"></div></div></div>`;
 }
 
@@ -777,6 +979,9 @@ function updateStage(label) {
 function maybeStartMinigame() {
   const t = player.currentTask;
   if (!t || activeGame || t.id === startedTaskId) return;
+  const wait = localLockEnd - performance.now();
+  if (wait > 0) { clearTimeout(lockTimer); lockTimer = setTimeout(maybeStartMinigame, wait + 50); return; } // locked out
+  if (player.interrupt && !clearedInts.has(player.interrupt.id)) { clearTimeout(lockTimer); lockTimer = setTimeout(maybeStartMinigame, 300); return; }
   startedTaskId = t.id;
   const go = () => {
     if (player.currentTask?.id !== t.id || activeGame) return;
@@ -812,6 +1017,7 @@ function renderProjects() {
       <div class="card"><b id="projTitle"></b><div class="muted" id="msg"></div></div></div>`;
     startedTaskId = null;
     showDeskItems();
+    startBossQuotes();
     if (player.fx?.gossip) startGossip();
   }
   const pr = player.proj, cur = snap.projects[pr.k];
@@ -823,6 +1029,14 @@ function renderProjects() {
 
 // ---- Night: summary → shop → loadout → ready up -----------------------------------------------------
 function renderNight() {
+  if (player.currentTask?.overtime) { // ⏰ Overtime: one more task while everyone else shops
+    if (screenKey !== "overtime" + snap.day) {
+      screenKey = "overtime" + snap.day;
+      startedTaskId = null;
+      app.innerHTML = `<div class="card"><h2>⏰ Overtime!</h2><p>One more task while everyone else hits the supply closet.</p></div>`;
+    }
+    return maybeStartMinigame();
+  }
   const key = "night" + snap.day;
   if (!screenKey.startsWith(key)) nightStep = "summary";
   if (player.ready) nightStep = "wait";
@@ -868,18 +1082,27 @@ function renderCurate() {
   const last = snap.day >= LAST_TASK_DAY;
   const rows = [...new Set(player.inventory)].map((id) => {
     const [name, desc] = ITEM_INFO[id], count = player.inventory.filter((x) => x === id).length;
-    const target = isSabotage(id) ? `<select data-t="${id}" aria-label="Target">${rivals.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join("")}</select>` : "";
+    const everyone = SABOTAGES.find((x) => x.id === id)?.everyone;
+    const target = isSabotage(id) ? `<select class="tsel" data-t="${id}" aria-label="Target">${rivals.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join("")}${everyone ? '<option value="*">👥 Everyone else (2 slots)</option>' : ""}</select>` : "";
     return `<label class="email"><input type="checkbox" data-id="${id}"><span style="flex:1"><b>${name}</b>${count > 1 ? ` ×${count}` : ""}<br><span class="muted">${desc}</span></span>${target}</label>`;
   }).join("");
   app.innerHTML = `<div class="card"><h2>Tomorrow's loadout</h2>
-    <p class="muted">Pick up to 3. They work all day, then they're used up. Sabotages need a target.</p>
+    <p class="muted">You have 3 slots. Items work all day, then they're used up. Sabotages need a target; "👥 Everyone else" uses 2 slots.</p>
     ${rows || '<p class="muted">Your inventory is empty. Earn more tomorrow and try the supply closet again.</p>'}
     <p id="err" class="err"></p>
     <button class="big" id="go">${last ? "Lock in for day 5" : "Ready up for day " + (snap.day + 1)}</button></div>`;
   const boxes = [...app.querySelectorAll("input[type=checkbox]")];
-  boxes.forEach((b) => (b.onchange = () => {
-    if (boxes.filter((x) => x.checked).length > 3) { b.checked = false; document.getElementById("err").textContent = "You can pick 3 at most."; }
-  }));
+  const slotsUsed = () => boxes.filter((x) => x.checked).reduce((n, x) => n + (app.querySelector(`select[data-t="${x.dataset.id}"]`)?.value === "*" ? 2 : 1), 0);
+  const check = (undo) => {
+    const over = slotsUsed() > 3;
+    if (over) undo();
+    document.getElementById("err").textContent = over ? "That's more than 3 slots (\"Everyone else\" uses 2)." : "";
+  };
+  boxes.forEach((b) => (b.onchange = () => check(() => (b.checked = false))));
+  app.querySelectorAll("select[data-t]").forEach((sel) => {
+    let prev = sel.value;
+    sel.onchange = () => { check(() => (sel.value = prev)); prev = sel.value; };
+  });
   document.getElementById("go").onclick = () => {
     const picks = boxes.filter((b) => b.checked).map((b) => ({
       id: b.dataset.id,
@@ -921,9 +1144,10 @@ function renderBoardroom() {
     slide = `<div class="accolade"><div class="muted">Accolade ${b.step} of ${b.awards.length}</div><h3>🏆 ${name}</h3>
       <div class="muted">${desc}</div><p><b>${esc(who.name)}</b> earns <b>+${money(justWon.bonus)}</b></p></div>`;
   } else {
-    const champ = snap.players.find((p) => p.id === b.winnerId), bot = snap.players.find((p) => p.id === b.topId);
+    const champ = snap.players.find((p) => p.id === b.winnerId);
     slide = `<div class="accolade"><div class="muted">And the promotion goes to…</div><h3>${esc(champ.name)}</h3>
-      <div class="stamp">PROMOTED</div>${b.topId !== b.winnerId ? `<p class="muted">${esc(bot.name)} earned the most, but bots can't be promoted.</p>` : ""}</div>`;
+      <div class="stamp">PROMOTED</div>${champ.isBot ? `<p class="roast">${esc(b.quips.bot)}</p>`
+        : `<p class="roast">${esc(b.quips.winner)}</p><p class="muted">4th place, <b>${esc(snap.players.find((p) => p.id === b.quips.loserId)?.name || "")}</b>: ${esc(b.quips.loser)}</p>`}</div>`;
   }
   const pr = player.proj;
   const mine = b.step === last && pr ? `<p class="muted">Your Day 5: ${pr.pays.map(money).join(", ") || "no projects"}${pr.done ? `, time bonus +${money(pr.bonus)}` : ""}</p>` : "";
@@ -934,29 +1158,13 @@ function renderBoardroom() {
   if (b.step === last && me) document.getElementById("again").onclick = () => act({ t: "again" });
 }
 
-// ---- Slack Gossip (only shows on the target's screen; bots just lose a little time) ------------------
-function startGossip() {
-  stopGossip();
-  gossipTimers.push(setTimeout(popGossip, 3000), setInterval(popGossip, 9000));
+
+function dismissSplash() {
+  const s = document.getElementById("splash");
+  s.classList.add("gone");
+  renderMenu();
 }
-function popGossip() {
-  if (document.querySelectorAll(".gossip").length >= 25) return;
-  const g = document.createElement("div");
-  g.className = "gossip";
-  g.style.left = rand(0, 55) + "%";
-  g.style.top = rand(5, 75) + "%";
-  g.innerHTML = `<button aria-label="Dismiss">×</button><b>💬 #random</b><br>${GOSSIP[Math.floor(Math.random() * GOSSIP.length)]}`;
-  g.querySelector("button").onclick = () => g.remove();
-  document.body.appendChild(g);
-  // Ignored pop-ups multiply every 4 seconds.
-  const grow = () => { if (g.isConnected) { popGossip(); gossipTimers.push(setTimeout(grow, 4000)); } };
-  gossipTimers.push(setTimeout(grow, 4000));
-}
-function stopGossip() {
-  gossipTimers.forEach((t) => { clearTimeout(t); clearInterval(t); });
-  gossipTimers = [];
-  document.querySelectorAll(".gossip").forEach((g) => g.remove());
-}
+document.getElementById("splash").addEventListener("click", dismissSplash);
+document.getElementById("splash").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") dismissSplash(); });
 
 setInterval(tick, 100);
-renderMenu();
