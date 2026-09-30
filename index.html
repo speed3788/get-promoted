@@ -20,8 +20,8 @@ h1,h2,h3{margin:0 0 8px}
 .task b{font-size:18px}
 .tname{font-size:15px;font-weight:600}
 .ttier{font-size:12px;color:var(--muted);text-transform:capitalize}
-.task.taken{opacity:.72;cursor:default;border-color:#c62828;background:#fdecea}
-.takenby{font-size:12px;color:#c62828;font-weight:700}
+.task.taken{opacity:.80;cursor:default}.task.mine{cursor:default;opacity:.85}
+.takenby{font-size:12px;font-weight:700}
 .task:active{transform:scale(.97)}
 .shape{width:16px;height:16px;display:inline-block;vertical-align:-2px}
 .shape.easy{background:var(--easy);border-radius:50%}
@@ -177,6 +177,7 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 .cdnum{font-size:100px;font-weight:900;line-height:1;color:#fff;text-shadow:0 4px 16px #000a,0 0 40px #fff4;animation:cdpop .4s ease-out}
 @keyframes cdpop{from{transform:scale(1.7);opacity:0}to{transform:scale(1);opacity:1}}
 .cdlabel{font-size:24px;font-weight:700;color:#fffdf6;margin-top:6px}
+.lastresult{min-height:20px;font-size:13px;color:var(--muted);padding:4px 8px;text-align:center;border-radius:8px;background:var(--paper)}
 .timer{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden}
 .timer div{height:100%;background:var(--memo)}
 </style>
@@ -187,10 +188,10 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 <div id="splash" role="button" tabindex="0" aria-label="Tap to begin"><img src="assets/landing.jpg" alt="Get Promoted! A Corporate Ascent Game"></div>
 <div id="app"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="src/data-model.js?v=20"></script>
-<script src="src/net.js?v=20"></script>
-<script src="src/minigames.js?v=20"></script>
-<script src="src/office-events.js?v=20"></script>
-<script src="src/game.js?v=20"></script>
+<script src="src/data-model.js?v=22"></script>
+<script src="src/net.js?v=22"></script>
+<script src="src/minigames.js?v=22"></script>
+<script src="src/office-events.js?v=22"></script>
+<script src="src/game.js?v=22"></script>
 </body>
 </html>

@@ -587,7 +587,7 @@ function snapshotFor(pid) {
     introLeft: state.phase === "projectsIntro" ? Math.max(0, (introEndsAt - performance.now()) / 1000) : 0,
     projects: state.projects || [],
     boardroom: state.boardroom || null,
-    view: state.phase === "task" ? viewFor(me).map((e) => e.t) : [],
+    view: state.phase === "task" ? viewFor(me).map((e) => ({ ...e.t, _ownerId: e.t.ownerId, _owned: e.t.state === "inProgress" })) : [],
     shop: state.shop?.[pid] || [],
     players: state.players.map((p) => p.id === pid
       ? { ...p, bot: undefined, priv: undefined, busy: !!p.currentTask, lockLeft: Math.max(0, ((p.lockUntil || 0) - performance.now()) / 1000),
@@ -928,6 +928,7 @@ function renderDay() {
     app.innerHTML = hudHtml(`Day ${snap.day} of 5`) + `<div class="panel">
       <div class="review-banner" id="review" hidden></div>
       <div class="pickhdr"><span class="pickttl">Pick a task</span><span class="muted" id="msg"></span></div>
+      <div class="lastresult" id="lastresult"></div>
       <div class="board" id="board"></div></div>`;
     startedTaskId = null;
     showDeskItems();
@@ -935,18 +936,24 @@ function renderDay() {
     if (player.fx?.gossip) startGossip();
   }
   updateStage((p, pop) => `<span class="${pop ? "pop" : ""}">💰${money(p.wallet)}</span>`);
-  document.getElementById("msg").textContent = player.lastMsg || "Finish fast for more pay. Others are grabbing tasks too.";
+  document.getElementById("msg").textContent = "Finish fast for more pay. Others are grabbing tasks too.";
+  // Show last task result in a separate line below the board (or clear it)
+  const msgEl = document.getElementById("lastresult");
+  if (msgEl) msgEl.textContent = player.lastMsg || "";
   const board = document.getElementById("board");
   board.innerHTML = snap.view.map((t) => {
-    const who = snap.players.find((pl) => pl.id === t.ownerId && pl.id !== myId);
-    const taken = t.state === "inProgress" && who;
-    return `<button class="task${taken ? " taken" : ""}" data-id="${t.id}">
+    const who = t._owned ? snap.players.find((pl) => pl.id === t._ownerId) : null;
+    const takenByOther = who && who.id !== myId;
+    const takenByMe = who && who.id === myId;
+    const color = who ? colorOf(who.id) : null;
+    return `<button class="task${takenByOther ? " taken" : takenByMe ? " mine" : ""}" data-id="${t.id}"
+      style="${color && takenByOther ? `border-color:${color};background:${color}18` : ""}">
       <span class="shape ${t.tier}"></span><b>${money(t.baseValue)}</b>
       <span class="tname">${NAMES[t.flavor]}</span>
-      ${taken ? `<span class="takenby">Grabbed by ${esc(who.name)}</span>` : `<span class="ttier">${t.tier}</span>`}
+      ${takenByOther ? `<span class="takenby" style="color:${color}">${esc(who.name)}</span>` : takenByMe ? `<span class="takenby" style="color:${color}">You</span>` : `<span class="ttier">${t.tier}</span>`}
     </button>`;
   }).join("");
-  board.querySelectorAll(".task:not(.taken)").forEach((b) => (b.onclick = () => {
+  board.querySelectorAll(".task:not(.taken):not(.mine)").forEach((b) => (b.onclick = () => {
     if (!activeGame && !player.currentTask) act({ t: "claim", id: +b.dataset.id });
   }));
   maybeStartMinigame();
