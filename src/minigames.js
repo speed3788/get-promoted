@@ -413,38 +413,38 @@ const MINIGAMES = {
   // ===== 📠 Copier Meltdown: one printer, one tray. Pages pile up → jam (lose 1s, −25%) =====
   copierMeltdown(task, done) {
     const n = task.workload, med = task.tier === "medium", every = med ? 700 : 900, jamAt = med ? 2 : 4;
-    let spawned = 0, shredded = 0, jams = 0, jammedUntil = 0, iv;
+    let spawned = 0, shredded = 0, jams = 0, jammedUntil = 0, inTray = 0, iv;
     const run = runner(task, done, () => clearInterval(iv));
     const o = openOverlay(`<h3>📠 Copier Meltdown</h3><p class="obj">Drag each page into the shredder. If ${jamAt} pile up, it jams.</p>
       <div class="copier" id="copier">
         <div class="bin-zone" id="shred" style="right:4px;bottom:4px">✂️<span>Shred</span></div>
-        <div class="tray" id="tray"></div>
         <div class="jam" id="jam" hidden>JAMMED!</div>
       </div>
       <p class="muted" id="cc">0 / ${n} shredded</p>`);
-    const tray = o.querySelector("#tray"), shred = o.querySelector("#shred"), jamEl = o.querySelector("#jam"), cc = o.querySelector("#cc");
-    // Pages spawn in the top-left area (away from the shredder at bottom-right)
-    const restack = () => [...tray.children].forEach((pg, i) => { pg.style.top = 6 + i * 6 + "px"; pg.style.left = 10 + i * 6 + "px"; });
+    const box = o.querySelector("#copier"), shred = o.querySelector("#shred"),
+          jamEl = o.querySelector("#jam"), cc = o.querySelector("#cc");
+    // Pages live directly in #copier so dragTo clamps to the full box (same parent as shredder).
+    // Stack them in the top-left corner so they're far from the shredder.
+    const restack = () => {
+      const pages = [...box.querySelectorAll(".page")];
+      pages.forEach((pg, i) => { pg.style.top = 8 + i * 8 + "px"; pg.style.left = 8 + i * 8 + "px"; });
+    };
     function spawn() {
-      if (run.over || spawned >= n || performance.now() < jammedUntil || tray.children.length >= jamAt) return;
-      spawned++;
-      const p = document.createElement("div");
-      p.className = "item page";
-      p.textContent = "📃";
-      // Append to the copier box (not the tray) so dragTo clamps within the same parent as the shredder
-      const copierBox = o.querySelector("#copier");
-      const tr = o.querySelector("#tray");
-      tr.appendChild(p);
+      if (run.over || spawned >= n || performance.now() < jammedUntil || inTray >= jamAt) return;
+      spawned++; inTray++;
+      const pg = document.createElement("div");
+      pg.className = "item page";
+      pg.textContent = "📃";
+      box.appendChild(pg);
       restack();
-      dragTo(p, [shred], () => {
-        p.remove();
+      dragTo(pg, [shred], () => {
+        pg.remove(); inTray--;
         restack();
         cc.textContent = `${++shredded} / ${n} shredded`;
         if (shredded === n) run.win({ accuracy: Math.max(0, 1 - 0.25 * jams), mistakes: jams });
       });
-      if (tray.children.length >= jamAt) {
-        jams++;
-        jammedUntil = performance.now() + 1000;
+      if (inTray >= jamAt) {
+        jams++; jammedUntil = performance.now() + 1000;
         jamEl.hidden = false;
         setTimeout(() => (jamEl.hidden = true), 1000);
       }
