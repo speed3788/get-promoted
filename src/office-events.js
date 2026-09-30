@@ -119,7 +119,7 @@ const INTERRUPT = {
 function updateInterruptScreen() {
   const it = player?.interrupt, live = snap && ["task", "projects"].includes(snap.phase);
   let el = document.getElementById("intov");
-  if (!it || !live || clearedInts.has(it.id)) { el?.remove(); intKey = ""; return; }
+  if (!it || !live || clearedInts.has(it.id)) { el?.remove(); document.getElementById("intov-dim")?.remove(); intKey = ""; return; }
   if (activeGame) return; // waits until the current minigame is done
   if (!el || intKey !== String(it.id)) { el?.remove(); el = buildInterrupt(it); intKey = String(it.id); }
   const c = el.querySelector(".intc");
@@ -129,15 +129,21 @@ function buildInterrupt(it) {
   const [icon, title, sub] = INTERRUPT[it.kind];
   const el = document.createElement("div");
   el.id = "intov";
-  el.className = "overlay intov";
+  el.className = "desk-interrupt";
   let body = `<div class="code-big intc"></div>`;
   if (it.kind === "smoke") body = `<p>☁️ On a smoke break with <b>${esc(it.with || "a coworker")}</b></p>` + body;
   if (it.kind === "printer") body = `<div class="pile" id="jamzone"><button class="big mash" id="unjam">Unjam</button></div><p class="muted" id="jc">0 / 6</p>`;
   if (it.kind === "password") body = `<p>New PIN: <b class="pin">${it.pin}</b></p><div class="pinshow" id="pinshow">_ _ _ _</div>
     <div class="keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => `<button data-d="${d}">${d}</button>`).join("")}</div>`;
   el.innerHTML = `<div class="card lockcard"><div class="inticon">${icon}</div><h2>${title}</h2>${sub ? `<p class="muted">${sub}</p>` : ""}${body}</div>`;
+  // Place inside the scene-box so it sits in front of the boss desk, not full-screen
+  // Dim behind the card (separate element so it doesn't create a stacking context)
+  const dim = document.createElement("div");
+  dim.className = "desk-interrupt-dim";
+  dim.id = "intov-dim";
+  document.body.appendChild(dim);
   document.body.appendChild(el);
-  const clear = () => { clearedInts.add(it.id); el.remove(); act({ t: "clearInterrupt", id: it.id }); };
+  const clear = () => { clearedInts.add(it.id); el.remove(); document.getElementById("intov-dim")?.remove(); act({ t: "clearInterrupt", id: it.id }); };
   if (it.kind === "printer") {
     let taps = 0;
     const b = el.querySelector("#unjam");

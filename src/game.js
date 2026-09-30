@@ -27,7 +27,7 @@ const NAMES = {
   hitTheQuota: "📊 Hit the Quota", budgetPie: "🥧 Budget Pie", trendLine: "📈 Trend Line",
   quarterlyCrunch: "🧮 Quarterly Crunch", clientCurveball: "🎯 Client Curveball",
 };
-const PENALTY_MSG = { boss: "👔 The Boss wants a 1 on 1 with you.", hr: "🧑‍💼 HR wants a chat." };
+const PENALTY_MSG = { boss: "👔 That's not how we do business here.", hr: "🧑‍💼 HR wants a chat." };
 const ITEM_INFO = {
   powerNetworking: ["Power Networking", "+10% pay on every task — for every task you do today"],
   doubleEspresso: ["Double Espresso", "Finish tasks 15% faster"],
@@ -963,7 +963,7 @@ function updateLockScreen() {
     el.id = "lockov";
     el.className = "overlay lock";
     el.innerHTML = `<div class="card lockcard">${kind === "boss" ? '<div class="bossface"></div>' : '<div class="hrface">🧑‍💼</div>'}
-      <h2>${kind === "boss" ? "The Boss wants a 1 on 1 with you." : "HR wants a chat."}</h2>
+      <h2>${kind === "boss" ? "That's not how we do business here." : "HR wants a chat."}</h2>
       <p class="muted">That task paid $0.</p><div class="code-big" id="lockc"></div></div>`;
     document.body.appendChild(el);
   }
