@@ -121,12 +121,14 @@ function dragTo(el, targets, onDrop) {
 }
 
 /** Put a draggable/clickable item at a random spot inside a pile box. */
-function placeItem(box, html, cls = "") {
+function placeItem(box, html, cls = "", opts = {}) {
   const d = document.createElement("div");
   d.className = "item " + cls;
   d.innerHTML = html;
-  d.style.left = 3 + Math.random() * 78 + "%";
-  d.style.top = 5 + Math.random() * 62 + "%";
+  // yMax: cap the top% so items don't spawn on top of in-box bin zones (default 55%)
+  const yMax = opts.yMax ?? 55;
+  d.style.left = 3 + Math.random() * 65 + "%";
+  d.style.top  = 5 + Math.random() * yMax + "%";
   box.appendChild(d);
   return d;
 }
@@ -312,21 +314,25 @@ const MINIGAMES = {
     const run = runner(task, done);
     const hint = hard ? "Sort it: <b>TOP SECRET</b> docs go in the <b>shredder</b>, everything else in the <b>trash</b>."
       : contracts ? "Trash every document, but leave the <b>signed contracts</b> on the desk." : "Drag every document into the trash. It never happened.";
-    const o = openOverlay(`<h3>🗑️ Cover Your Tracks</h3><p class="obj">${hint}</p><div class="pile" id="pile"></div>
-      <div class="bins">${hard ? '<div class="target" id="shred">✂️ Shredder</div>' : ""}<div class="target" id="bin">🗑️ Trash</div></div>`);
-    const pile = o.querySelector("#pile"), bin = o.querySelector("#bin"), shred = o.querySelector("#shred");
-    const targets = hard ? [shred, bin] : [bin];
+    // Bins live INSIDE the pile box. Hard: trash bottom-left, shredder bottom-right.
+    const o = openOverlay(`<h3>🗑️ Cover Your Tracks</h3><p class="obj">${hint}</p>
+      <div class="pile" id="pile">
+        <div class="bin-zone" id="bin" style="left:4px;bottom:4px">🗑️<span>Trash</span></div>
+        ${hard ? '<div class="bin-zone" id="shred" style="right:4px;bottom:4px">✂️<span>Shred</span></div>' : ""}
+      </div>`);
+    const pile = o.querySelector("#pile"), bin = o.querySelector("#bin"), shred = hard ? o.querySelector("#shred") : null;
+    const targets = hard ? [bin, shred] : [bin]; // ti=0→trash, ti=1→shred
     let kinds = Array.from({ length: n }, () => (hard && Math.random() < 0.45 ? "secret" : "doc"));
     if (hard && !kinds.includes("secret")) kinds[0] = "secret";
     if (hard && !kinds.includes("doc")) kinds[1] = "doc";
     let left = n;
     const add = (kind) => {
       const html = kind === "secret" ? '📄<span class="tag red">TOP SECRET</span>' : kind === "contract" ? '📑<span class="tag gold">SIGNED</span>' : "📄";
-      const el = placeItem(pile, html, kind);
+      const el = placeItem(pile, html, kind, { yMax: 45 }); // bottom ~70px reserved for bins
       dragTo(el, targets, (ti) => {
         el.remove();
-        if (kind === "contract") return run.penalize(); // HR: you shredded a signed contract
-        if (hard && (kind === "secret") !== (ti === 0)) return run.penalize(); // HR: wrong bin
+        if (kind === "contract") return run.penalize();
+        if (hard && (kind === "secret") !== (ti === 1)) return run.penalize(); // secret→shred(ti1), doc→trash(ti0)
         if (--left === 0) run.win();
       });
     };
@@ -409,18 +415,26 @@ const MINIGAMES = {
     const n = task.workload, med = task.tier === "medium", every = med ? 700 : 900, jamAt = med ? 2 : 4;
     let spawned = 0, shredded = 0, jams = 0, jammedUntil = 0, iv;
     const run = runner(task, done, () => clearInterval(iv));
-    const o = openOverlay(`<h3>📠 Copier Meltdown</h3><p class="obj">Drag each page into the shredder. If ${jamAt} pages pile up in the tray, it jams.</p>
-      <div class="copier"><div class="printer">🖨️</div><div class="tray" id="tray"></div><div class="jam" id="jam" hidden>JAMMED!</div></div>
-      <div class="bins"><div class="target" id="shred">✂️ Shredder</div></div><p class="muted" id="cc">0 / ${n} shredded</p>`);
+    const o = openOverlay(`<h3>📠 Copier Meltdown</h3><p class="obj">Drag each page into the shredder. If ${jamAt} pile up, it jams.</p>
+      <div class="copier" id="copier">
+        <div class="bin-zone" id="shred" style="right:4px;bottom:4px">✂️<span>Shred</span></div>
+        <div class="tray" id="tray"></div>
+        <div class="jam" id="jam" hidden>JAMMED!</div>
+      </div>
+      <p class="muted" id="cc">0 / ${n} shredded</p>`);
     const tray = o.querySelector("#tray"), shred = o.querySelector("#shred"), jamEl = o.querySelector("#jam"), cc = o.querySelector("#cc");
-    const restack = () => [...tray.children].forEach((p, i) => { p.style.top = 6 + i * 6 + "px"; p.style.left = 10 + i * 6 + "px"; });
+    // Pages spawn in the top-left area (away from the shredder at bottom-right)
+    const restack = () => [...tray.children].forEach((pg, i) => { pg.style.top = 6 + i * 6 + "px"; pg.style.left = 10 + i * 6 + "px"; });
     function spawn() {
       if (run.over || spawned >= n || performance.now() < jammedUntil || tray.children.length >= jamAt) return;
       spawned++;
       const p = document.createElement("div");
       p.className = "item page";
       p.textContent = "📃";
-      tray.appendChild(p);
+      // Append to the copier box (not the tray) so dragTo clamps within the same parent as the shredder
+      const copierBox = o.querySelector("#copier");
+      const tr = o.querySelector("#tray");
+      tr.appendChild(p);
       restack();
       dragTo(p, [shred], () => {
         p.remove();
