@@ -412,7 +412,7 @@ const MINIGAMES = {
 
   // ===== 📠 Copier Meltdown: one printer, one tray. Pages pile up → jam (lose 1s, −25%) =====
   copierMeltdown(task, done) {
-    const n = task.workload, med = task.tier === "medium", every = med ? 700 : 900, jamAt = med ? 2 : 4;
+    const n = task.workload, med = task.tier === "medium", every = med ? 700 : 900, jamAt = 4;
     let spawned = 0, shredded = 0, jams = 0, jammedUntil = 0, inTray = 0, iv;
     const run = runner(task, done, () => clearInterval(iv));
     const o = openOverlay(`<h3>📠 Copier Meltdown</h3><p class="obj">Drag each page into the shredder. If ${jamAt} pile up, it jams.</p>
@@ -428,7 +428,7 @@ const MINIGAMES = {
     // Stack them in the top-left corner so they're far from the shredder.
     const restack = () => {
       const pages = [...box.querySelectorAll(".page")];
-      pages.forEach((pg, i) => { pg.style.top = 8 + i * 8 + "px"; pg.style.left = 8 + i * 8 + "px"; });
+      pages.forEach((pg, i) => { pg.style.top = 55 + i * 6 + "px"; pg.style.left = 8 + i * 6 + "px"; });
     };
     function spawn() {
       if (run.over || spawned >= n || performance.now() < jammedUntil || inTray >= jamAt) return;
