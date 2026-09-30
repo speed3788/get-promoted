@@ -417,6 +417,7 @@ const MINIGAMES = {
     const run = runner(task, done, () => clearInterval(iv));
     const o = openOverlay(`<h3>📠 Copier Meltdown</h3><p class="obj">Drag each page into the shredder. If ${jamAt} pile up, it jams.</p>
       <div class="copier" id="copier">
+        <div style="position:absolute;left:6px;top:6px;font-size:36px;line-height:1;pointer-events:none;z-index:1">🖨️</div>
         <div class="bin-zone" id="shred" style="right:4px;bottom:4px">✂️<span>Shred</span></div>
         <div class="jam" id="jam" hidden>JAMMED!</div>
       </div>
