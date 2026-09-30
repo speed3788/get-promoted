@@ -373,7 +373,7 @@ const MINIGAMES = {
     const o = openOverlay(`<h3>📊 Hit the Quota</h3><p class="muted">Hold to grow each bar. Release at its quota.${tier === "hard" ? " Bars grow fast!" : ""}</p>
       <div class="chart">${grid.map((v) => `<div class="gridline" style="bottom:${v}%"><span>$${v}K</span></div>`).join("")}
         <div class="bars">${targets.map((t, i) => `<div class="barcol"><div class="qlabel">$${t}K</div><div class="barwell">
-          ${tier === "easy" ? `<div class="tline" style="bottom:${t}%"></div>` : ""}<div class="barfill" id="b${i}"></div></div></div>`).join("")}</div></div>
+          <div class="tline" style="bottom:${t}%;border-color:#c62828"></div><div class="barfill" id="b${i}"></div></div></div>`).join("")}</div></div>
       <p class="muted" id="st">Bar 1 of ${k}</p><button class="big" id="act">Hold</button>`);
     const btn = o.querySelector("#act"), st = o.querySelector("#st");
     const bar = () => o.querySelector("#b" + cur);

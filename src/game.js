@@ -29,13 +29,13 @@ const NAMES = {
 };
 const PENALTY_MSG = { boss: "👔 The Boss wants a 1 on 1 with you.", hr: "🧑‍💼 HR wants a chat." };
 const ITEM_INFO = {
-  powerNetworking: ["Power Networking", "+10% pay on every task"],
-  doubleEspresso: ["Double Espresso", "+15% speed bonus on every task"],
+  powerNetworking: ["Power Networking", "+10% pay on every task — for every task you do today"],
+  doubleEspresso: ["Double Espresso", "Finish tasks 15% faster"],
   itFastTrack: ["IT Fast-Track", "+2 seconds on every Medium task"],
-  executiveAssistant: ["Executive Assistant", "Wider Perfect/Good bands on chart games"],
+  executiveAssistant: ["Executive Assistant", "Easier to hit the target on chart tasks"],
   legalPreApproval: ["Legal Pre-Approval", "Question games drop one wrong answer"],
   hrWellnessStipend: ["HR Wellness Stipend", `+$${STIPEND} at the end of the day`],
-  overtime: ["Overtime", "One extra task tonight while everyone else shops"],
+  overtime: ["Overtime", "Play one bonus task tonight while everyone shops"],
   aiTokens: ["AI Tokens", "Your first 5 Easy tasks finish themselves at max pay"],
   bribeTheBoss: ["Bribe the Boss", "At least 2 Medium or Hard tasks on your board"],
   bribeHR: ["Bribe HR", "Sabotages can't touch you tomorrow"],
@@ -927,7 +927,7 @@ function renderDay() {
     screenKey = key;
     app.innerHTML = hudHtml(`Day ${snap.day} of 5`) + `<div class="panel">
       <div class="review-banner" id="review" hidden></div>
-      <div class="card"><b>Pick a task</b><div class="muted" id="msg"></div></div>
+      <div class="pickhdr"><span class="pickttl">Pick a task</span><span class="muted" id="msg"></span></div>
       <div class="board" id="board"></div></div>`;
     startedTaskId = null;
     showDeskItems();
@@ -935,11 +935,18 @@ function renderDay() {
     if (player.fx?.gossip) startGossip();
   }
   updateStage((p, pop) => `<span class="${pop ? "pop" : ""}">💰${money(p.wallet)}</span>`);
-  document.getElementById("msg").textContent = player.lastMsg || "Faster and more accurate pays more. Coworkers are grabbing tasks too.";
+  document.getElementById("msg").textContent = player.lastMsg || "Finish fast for more pay. Others are grabbing tasks too.";
   const board = document.getElementById("board");
-  board.innerHTML = snap.view.map((t) => `<button class="task" data-id="${t.id}"><span class="shape ${t.tier}"></span>
-    <b>${money(t.baseValue)}</b><br>${NAMES[t.flavor]}<br><span class="muted">${t.tier}</span></button>`).join("");
-  board.querySelectorAll(".task").forEach((b) => (b.onclick = () => {
+  board.innerHTML = snap.view.map((t) => {
+    const who = snap.players.find((pl) => pl.id === t.ownerId && pl.id !== myId);
+    const taken = t.state === "inProgress" && who;
+    return `<button class="task${taken ? " taken" : ""}" data-id="${t.id}">
+      <span class="shape ${t.tier}"></span><b>${money(t.baseValue)}</b>
+      <span class="tname">${NAMES[t.flavor]}</span>
+      ${taken ? `<span class="takenby">Grabbed by ${esc(who.name)}</span>` : `<span class="ttier">${t.tier}</span>`}
+    </button>`;
+  }).join("");
+  board.querySelectorAll(".task:not(.taken)").forEach((b) => (b.onclick = () => {
     if (!activeGame && !player.currentTask) act({ t: "claim", id: +b.dataset.id });
   }));
   maybeStartMinigame();

@@ -45,10 +45,10 @@ const flavorsFor = (tier) => Object.keys(LADDER).filter((f) => LADDER[f][tier]);
 // 4 slots to "easy"); this table governs every board refresh after that,
 // on Days 1-4. Day 5 has no board at all.
 const TASK_SPAWN_ODDS_BY_DAY = {
-  1: { easy: 0.6, medium: 0.3, hard: 0.1 },
-  2: { easy: 0.5, medium: 0.35, hard: 0.15 },
-  3: { easy: 0.4, medium: 0.4, hard: 0.2 },
-  4: { easy: 0.33, medium: 0.33, hard: 0.34 },
+  1: { easy: 0.80, medium: 0.17, hard: 0.03 }, // mostly Easy Day 1 so new players can learn
+  2: { easy: 0.45, medium: 0.40, hard: 0.15 },
+  3: { easy: 0.35, medium: 0.40, hard: 0.25 },
+  4: { easy: 0.25, medium: 0.40, hard: 0.35 },
 };
 
 /** Roll a task tier for a new board slot, per the current day's odds. */
@@ -96,18 +96,17 @@ function speedFromElapsed(elapsedSeconds, outerCapSeconds) {
 // ---- Boosts & Sabotages --------------------------------------------------
 
 const ITEM_TIERS = {
-  // Cut from $50-80 / 120-180 / 250-350 after playtesting (see BALANCE-NOTES.md)
-  common: { minPrice: 30, maxPrice: 45 },
-  uncommon: { minPrice: 70, maxPrice: 100 },
-  rare: { minPrice: 150, maxPrice: 200 },
+  common:   { minPrice: 10, maxPrice: 20 },  // Day 1 players can afford at least one
+  uncommon: { minPrice: 35, maxPrice: 55 },
+  rare:     { minPrice: 100, maxPrice: 150 },
 };
 
 // Shop draw odds per day (Days 1-4 only; no shop after Day 5).
 const SHOP_ODDS_BY_DAY = {
-  1: { common: 0.7, uncommon: 0.25, rare: 0.05 },
-  2: { common: 0.55, uncommon: 0.35, rare: 0.1 },
-  3: { common: 0.35, uncommon: 0.4, rare: 0.25 },
-  4: { common: 0.2, uncommon: 0.4, rare: 0.4 },
+  1: { common: 0.90, uncommon: 0.09, rare: 0.01 }, // almost all Common so everyone can afford something
+  2: { common: 0.65, uncommon: 0.30, rare: 0.05 },
+  3: { common: 0.40, uncommon: 0.40, rare: 0.20 },
+  4: { common: 0.20, uncommon: 0.40, rare: 0.40 },
 };
 
 // v2: every sabotage visibly interrupts the victim (docs/BACKLOG.md "sabotage redesign").
