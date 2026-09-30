@@ -177,7 +177,23 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 .cdnum{font-size:100px;font-weight:900;line-height:1;color:#fff;text-shadow:0 4px 16px #000a,0 0 40px #fff4;animation:cdpop .4s ease-out}
 @keyframes cdpop{from{transform:scale(1.7);opacity:0}to{transform:scale(1);opacity:1}}
 .cdlabel{font-size:24px;font-weight:700;color:#fffdf6;margin-top:6px}
-.lastresult{min-height:20px;font-size:13px;color:var(--muted);padding:4px 8px;text-align:center;border-radius:8px;background:var(--paper)}
+.cdwrap{display:flex;justify-content:center;align-items:flex-start;padding-top:calc(min(150vw,100dvh)*0.38)}
+.obj{font-size:15px;font-weight:700;color:#c62828;margin:4px 0 8px;line-height:1.35}
+.tval{position:absolute;right:-2px;top:-16px;font-size:11px;font-weight:900;color:#c62828;white-space:nowrap;background:var(--paper);padding:0 3px;border-radius:3px}
+.item.note{width:38px;height:38px;border-radius:3px;box-shadow:1px 2px 3px #0004}
+.item.note.yellow{background:#ffe26a;border:1px solid #d9bd3c}
+.item.note.pink{background:#ff8fb1;border:1px solid #d96186}
+.itemtype{font-size:12px;letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:2px}
+.itemtype.boost b{color:#2e7d32}
+.itemtype.sab b{color:#c62828}
+.rarity{font-size:11px;font-weight:800;text-transform:uppercase}
+.item-card button.boostbtn:not([disabled]){background:#2e7d32;color:#fff;border-color:#1f5723}
+.item-card button.sabbtn:not([disabled]){background:#c62828;color:#fff;border-color:#8e1c1c}
+.audiobox{position:fixed;right:10px;bottom:10px;z-index:40;display:flex;align-items:center;gap:6px}
+.mutebtn{font-size:20px;line-height:1;padding:8px 10px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);cursor:pointer;flex:none}
+.volslider{width:0;opacity:0;transition:width .18s ease,opacity .18s ease;accent-color:var(--ink);cursor:pointer;height:22px}
+.audiobox.open .volslider,.audiobox:hover .volslider{width:96px;opacity:1}
+@media (hover:none){.audiobox .volslider{width:80px;opacity:1}}
 .timer{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden}
 .timer div{height:100%;background:var(--memo)}
 </style>
@@ -188,10 +204,10 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 <div id="splash" role="button" tabindex="0" aria-label="Tap to begin"><img src="assets/landing.jpg" alt="Get Promoted! A Corporate Ascent Game"></div>
 <div id="app"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="src/data-model.js?v=22"></script>
-<script src="src/net.js?v=22"></script>
-<script src="src/minigames.js?v=22"></script>
-<script src="src/office-events.js?v=22"></script>
-<script src="src/game.js?v=22"></script>
+<script src="src/data-model.js?v=25"></script>
+<script src="src/net.js?v=25"></script>
+<script src="src/minigames.js?v=25"></script>
+<script src="src/office-events.js?v=25"></script>
+<script src="src/game.js?v=25"></script>
 </body>
 </html>

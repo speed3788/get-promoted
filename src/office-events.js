@@ -261,3 +261,85 @@ function showFailBubble(seat, word) {
   document.body.appendChild(b);
   setTimeout(() => b.remove(), 2200);
 }
+
+// ---- Music: one looping track per section, with a mute toggle -------------------------------
+// menu   → splash, menu, lobby
+// days   → countdown + Days 1-4 (task phase) + nights
+// finale → Day 5 projects + boardroom
+const TRACKS = { menu: "assets/audio/menu.mp3", days: "assets/audio/days.mp3", finale: "assets/audio/finale.mp3" };
+const PHASE_TRACK = {
+  lobby: "menu", countdown: "days", task: "days", night: "days",
+  projectsIntro: "finale", projects: "finale", boardroom: "finale",
+};
+let audioEl = null, curTrack = null;
+let muted = localStorage.getItem("gp-muted") === "1";
+let volume = Math.min(1, Math.max(0, parseFloat(localStorage.getItem("gp-volume") ?? "0.45")));
+
+function playTrack(name) {
+  if (!TRACKS[name]) return;
+  if (!audioEl) {
+    audioEl = new Audio();
+    audioEl.loop = true;
+  }
+  audioEl.volume = volume;
+  if (curTrack !== name) {
+    curTrack = name;
+    audioEl.src = TRACKS[name];
+  }
+  if (muted || volume === 0) { audioEl.pause(); return; }
+  // Browsers block autoplay until the user interacts — the splash tap covers this.
+  audioEl.play().catch(() => {});
+}
+
+function applyAudio() {
+  if (audioEl) {
+    audioEl.volume = volume;
+    if (muted || volume === 0) audioEl.pause();
+    else audioEl.play().catch(() => {});
+  }
+  const btn = document.getElementById("mutebtn");
+  if (btn) btn.textContent = muted || volume === 0 ? "🔇" : volume < 0.4 ? "🔉" : "🔊";
+  const sl = document.getElementById("volslider");
+  if (sl && +sl.value !== Math.round(volume * 100)) sl.value = Math.round(volume * 100);
+}
+
+function setMuted(v) {
+  muted = v;
+  localStorage.setItem("gp-muted", v ? "1" : "0");
+  applyAudio();
+}
+
+function setVolume(v) {
+  volume = Math.min(1, Math.max(0, v));
+  localStorage.setItem("gp-volume", String(volume));
+  if (volume > 0 && muted) { muted = false; localStorage.setItem("gp-muted", "0"); } // dragging up unmutes
+  applyAudio();
+}
+
+/** Called on every snapshot + at the splash/menu so music matches the current screen. */
+function syncMusic(phase) {
+  playTrack(PHASE_TRACK[phase] || "menu");
+}
+
+/** Audio control: speaker button toggles mute, and opens a volume slider. */
+function mountMuteButton() {
+  if (document.getElementById("audiobox")) return;
+  const box = document.createElement("div");
+  box.id = "audiobox";
+  box.className = "audiobox";
+  box.innerHTML = `<input id="volslider" class="volslider" type="range" min="0" max="100" step="5"
+      value="${Math.round(volume * 100)}" aria-label="Music volume">
+    <button id="mutebtn" class="mutebtn" aria-label="Mute or unmute music"></button>`;
+  document.body.appendChild(box);
+  const btn = box.querySelector("#mutebtn"), sl = box.querySelector("#volslider");
+  btn.onclick = () => {
+    box.classList.add("open"); // show the slider whenever they touch the speaker
+    setMuted(!muted);
+    clearTimeout(box._t);
+    box._t = setTimeout(() => box.classList.remove("open"), 4000);
+  };
+  const show = () => { box.classList.add("open"); clearTimeout(box._t); box._t = setTimeout(() => box.classList.remove("open"), 4000); };
+  sl.oninput = () => { setVolume(+sl.value / 100); show(); };
+  box.onpointerenter = show;
+  applyAudio();
+}

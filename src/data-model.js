@@ -143,7 +143,7 @@ function drawShopCards(day) {
   const odds = SHOP_ODDS_BY_DAY[day];
   const drawn = [];
   const remaining = [...SHOP_ITEM_CATALOG];
-  while (drawn.length < 5 && remaining.length > 0) {
+  while (drawn.length < 6 && remaining.length > 0) {
     const r = Math.random();
     const tier = r < odds.common ? "common" : r < odds.common + odds.uncommon ? "uncommon" : "rare";
     const candidates = remaining.filter((item) => item.tier === tier);

@@ -331,3 +331,35 @@ was a miss forever. After the outer cap expired the task returned to the pool
 but the overlay stayed open, blocking claims → looked like the round-lockout bug.
 Fix: store targets as chart-percentages (same units as `v(x)`). Display label
 still shows "$40K" by treating the percentage as K-dollars (matching the axis).
+
+## Playtest round 3 fixes (v=24)
+
+**ROOT CAUSE of the taken-indicator bug (finally found):** `takeTask()` was
+removing the claimed task from the board and replacing it with a fresh one
+immediately on claim. The "taken" task never existed on the board to display —
+that's why it looked like tasks randomly rotated on their own. Fixed: tasks now
+stay in their slot marked `inProgress`, and `refillSlot()` replaces them only
+once finished/failed. Taken cards use the owner's player colour (matching
+their cubicle border) + their name.
+
+Also fixed/added:
+1. Hit the Quota target value moved into the bar column (`.tval`) — no longer overlaps the description.
+3+7. Shop: rarity borders now grey/green/blue; "⬆️ **BOOST**" (green button) vs "😈 **SABOTAGE**" (red button); 6 cards instead of 5.
+4. Post-it Panic: boss note is now the same size/shape as the others, just pink (was a 📌 emoji that could block clickable notes).
+5. All minigame objectives are red+bold (`.obj`) instead of grey.
+6. Stapler Frenzy Medium hops every 4 staples (was 8) over a wider area.
+8. Client Curveball wrong answer now says "That's not how we do business here."
+9. 3-second countdown before EVERY day (was Day 1 only).
+10. Boardroom accolades advance on a host button press, not a timer.
+11. Music: `assets/audio/{menu,days,finale}.mp3` — menu track for splash/menu/lobby,
+    days track for countdown + Days 1-4 + nights, finale for Day 5 + Boardroom.
+    Audio starts on the splash tap to satisfy browser autoplay rules.
+
+## Audio control (v=25)
+Every player has their own mute + volume control (bottom-right, `#audiobox`
+in office-events.js). Speaker button toggles mute; slider sets volume 0-100%.
+Icon reflects state (🔇 / 🔉 / 🔊). Volume 0 pauses playback; dragging up from
+0 or from muted automatically unmutes. Both settings persist in localStorage
+(`gp-muted`, `gp-volume`). On touch devices the slider is always visible; on
+desktop it expands on hover or when the speaker is tapped, then auto-collapses.
+It's a per-player client-side setting — it does not affect other players.

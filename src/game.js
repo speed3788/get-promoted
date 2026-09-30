@@ -20,7 +20,7 @@ const STIPEND = 25, SEATS = 4;
 const PROJECT_TIERS = ["medium", "medium", "hard", "hard"], INTRO_SECONDS = 4;
 const BOT_NAMES = ["Taylor", "Morgan", "Riley"];
 const COLORS = ["#378ADD", "#D85A30", "#639922", "#7F77DD"];
-const TIER_BORDER = { common: "#b87333", uncommon: "#a8a9ad", rare: "#d4af37" }; // bronze / silver / gold
+const TIER_BORDER = { common: "#8d8f98", uncommon: "#2e9e4f", rare: "#2f7fd4" }; // grey / green / blue
 const NAMES = {
   staplerFrenzy: "📎 Stapler Frenzy", coverYourTracks: "🗑️ Cover Your Tracks", inboxZeroRush: "📧 Inbox Zero Rush",
   postItPanic: "📝 Post-it Panic", copierMeltdown: "📠 Copier Meltdown",
@@ -239,22 +239,28 @@ function settle(p, task, r) {
 
 function report(p, out, task, note) {
   p.lastMsg = !out ? "Time's up. That task went back on the board."
-    : out.penalty ? `${PENALTY_MSG[out.penalty]} $0 for that one.`
+    : out.penalty ? (note || `${PENALTY_MSG[out.penalty]} $0 for that one.`)
     : out.frozen ? "🧊 Frozen paycheck. That one paid $0."
     : `+${money(out.pay)}, accuracy ${Math.round(task.accuracy * 100)}%, speed ${task.speed.toFixed(2)}x` + (note ? `. ${note}` : "");
 }
 
 /** Remove shared board slot i; it refills immediately. */
 function takeTask(i) {
-  const task = state.board[i];
-  state.board[i] = newTask(rollTaskTier(state.day));
-  return task;
+  // Leave the task in its slot (marked inProgress by the caller) so every player can see
+  // who grabbed it. The slot refills in refillSlot() once the task is finished/failed.
+  return state.board[i];
+}
+
+/** Replace a finished/failed task's board slot with a fresh one. */
+function refillSlot(task) {
+  const i = state.board.findIndex((t) => t && t.id === task.id);
+  if (i >= 0) state.board[i] = newTask(rollTaskTier(state.day));
 }
 
 /** Failed tasks go back into the shared pool for someone else. */
 function returnToPool(task) {
+  // Used when a player disconnects mid-task: free the task back up in its own slot.
   Object.assign(task, { state: "available", ownerId: null, accuracy: null, speed: null });
-  state.board[Math.floor(Math.random() * 4)] = task;
 }
 
 /**
@@ -473,7 +479,7 @@ function startBoardroom() {
   const winnerId = [...state.players].sort((x, y) => y.careerEarnings - x.careerEarnings)[0].id;
   const champ = byId(winnerId), last = [...state.players].sort((x, y) => x.careerEarnings - y.careerEarnings)[0];
   const quips = champ.isBot ? { bot: pick(BOT_WIN_QUIPS) } : { winner: pick(WINNER_QUIPS), loser: pick(LOSER_QUIPS), loserId: last.id };
-  state.boardroom = { step: 0, base, awards, winnerId, quips, nextAt: performance.now() + SLIDE_SECONDS * 1000 };
+  state.boardroom = { step: 0, base, awards, winnerId, quips };
   sync();
 }
 
@@ -488,6 +494,7 @@ function hostAction(p, m) {
   else if (m.t === "clearInterrupt" && p.interrupt && !p.interrupt.timed && p.interrupt.id === m.id) p.interrupt = null;
   else if (m.t === "start" && p.id === myId && state.phase === "lobby") { fillBots(); return startDay(1); }
   else if (m.t === "again" && p.id === myId && state.phase === "boardroom") return resetMatch();
+  else if (m.t === "nextSlide" && p.id === myId && state.phase === "boardroom" && state.boardroom.step < state.boardroom.awards.length + 1) state.boardroom.step++;
   sync();
 }
 
@@ -500,7 +507,9 @@ function hostClaim(p, taskId) {
   Object.assign(task, { state: "inProgress", ownerId: p.id });
   if (task.tier === "easy" && p.aiLeft > 0) {
     p.aiLeft--;
-    return report(p, settle(p, task, { success: true, accuracy: 1, speed: 1.5, ai: true }), task, `🤖 AI handled it (${p.aiLeft} left)`);
+    const aiOut = settle(p, task, { success: true, accuracy: 1, speed: 1.5, ai: true });
+    refillSlot(task);
+    return report(p, aiOut, task, `🤖 AI handled it (${p.aiLeft} left)`);
   }
   p.currentTask = task;
 }
@@ -515,7 +524,7 @@ function hostResult(p, taskId, r) {
     penalty: task.penalty && r.penalty ? task.penalty : null }; // only games that carry a penalty can trigger one
   const out = settle(p, task, safe);
   if (state.phase === "projects") return projectDone(p, out, task, safe.note);
-  if (!out && state.phase === "task") returnToPool(task);
+  if (state.phase === "task") refillSlot(task); // the slot opens up again now
   report(p, out, task, task.overtime ? `⏰ Overtime${safe.note ? ". " + safe.note : ""}` : safe.note);
 }
 
@@ -615,7 +624,8 @@ function botsTick() {
     const s = b.bot;
     if (s.current) {
       if (now < s.current.doneAt) return;
-      if (!settle(b, s.current.task, s.current.result)) returnToPool(s.current.task);
+      settle(b, s.current.task, s.current.result);
+      refillSlot(s.current.task);
       s.current = null;
       s.nextAt = now + rand(400, 900); // decision time before the next grab
       changed = true;
@@ -776,6 +786,7 @@ function applySnapshot(s) {
   }
   onOfficeEvents();
   checkFailBubbles();
+  syncMusic(s.phase);
   if (s.phase === "task" || s.phase === "projects") localEnd = performance.now() + s.timeLeft * 1000;
   if (s.phase === "projectsIntro") localIntroEnd = performance.now() + s.introLeft * 1000;
   if (s.phase === "countdown" && s.countdownLeft > 0) localCountdownEnd = performance.now() + s.countdownLeft * 1000;
@@ -839,10 +850,7 @@ function tick() {
     botsTick();
     if (performance.now() >= dayEndsAt) endDay();
   }
-  if (isHost && state?.phase === "boardroom") {
-    const b = state.boardroom;
-    if (b.step < b.awards.length + 1 && performance.now() >= b.nextAt) { b.step++; b.nextAt += SLIDE_SECONDS * 1000; sync(); }
-  }
+  // Boardroom advances only when the host presses Next (hostAction "nextSlide").
   if (isHost && state?.phase === "projectsIntro" && performance.now() >= introEndsAt) beginProjects();
   if (isHost && state?.phase === "projects") {
     projectBotsTick();
@@ -928,7 +936,6 @@ function renderDay() {
     app.innerHTML = hudHtml(`Day ${snap.day} of 5`) + `<div class="panel">
       <div class="review-banner" id="review" hidden></div>
       <div class="pickhdr"><span class="pickttl">Pick a task</span><span class="muted" id="msg"></span></div>
-      <div class="lastresult" id="lastresult"></div>
       <div class="board" id="board"></div></div>`;
     startedTaskId = null;
     showDeskItems();
@@ -937,9 +944,6 @@ function renderDay() {
   }
   updateStage((p, pop) => `<span class="${pop ? "pop" : ""}">💰${money(p.wallet)}</span>`);
   document.getElementById("msg").textContent = "Finish fast for more pay. Others are grabbing tasks too.";
-  // Show last task result in a separate line below the board (or clear it)
-  const msgEl = document.getElementById("lastresult");
-  if (msgEl) msgEl.textContent = player.lastMsg || "";
   const board = document.getElementById("board");
   board.innerHTML = snap.view.map((t) => {
     const who = t._owned ? snap.players.find((pl) => pl.id === t._ownerId) : null;
@@ -981,7 +985,7 @@ function showDeskItems() {
 function renderCountdown() {
   if (screenKey !== "countdown") {
     screenKey = "countdown";
-    app.innerHTML = `<div class="cdbox"><div class="cdnum" id="cdnum">3</div><div class="cdlabel">Get ready!</div></div>`;
+    app.innerHTML = `<div class="cdwrap"><div class="cdbox"><div class="cdnum" id="cdnum">3</div><div class="cdlabel">Day ${snap.day} — get ready!</div></div></div>`;
   }
   // Update the number on every render() call — driven by localCountdownEnd so it
   // ticks smoothly even when the host sends no new snapshots during the quiet countdown.
@@ -1119,10 +1123,12 @@ function renderShop() {
     <div class="shop">` + snap.shop.map((c, i) => {
       const [name, desc] = ITEM_INFO[c.id], afford = player.wallet >= c.price;
       const have = player.inventory.filter((x) => x === c.id).length;
+      const sab = isSabotage(c.id);
       return `<div class="item-card" style="border-color:${TIER_BORDER[c.tier]}">
-        <div class="muted">${isSabotage(c.id) ? "📉 Sabotage" : "📈 Boost"}, ${c.tier}</div><b>${name}</b>
+        <div class="itemtype ${sab ? "sab" : "boost"}">${sab ? "😈 <b>SABOTAGE</b>" : "⬆️ <b>BOOST</b>"}
+          <span class="rarity" style="color:${TIER_BORDER[c.tier]}">${c.tier}</span></div><b>${name}</b>
         <div class="muted">${desc}</div>${have ? `<div class="muted">You have ${have}</div>` : ""}
-        <button data-i="${i}" ${c.bought || !afford ? "disabled" : ""}>${c.bought ? "Bought" : (afford ? "Buy " : "Need ") + money(c.price)}</button></div>`;
+        <button class="${sab ? "sabbtn" : "boostbtn"}" data-i="${i}" ${c.bought || !afford ? "disabled" : ""}>${c.bought ? "Bought" : (afford ? "Buy " : "Need ") + money(c.price)}</button></div>`;
     }).join("") + `</div><button class="big" id="done">Choose tomorrow's items</button>`;
   app.querySelectorAll("[data-i]").forEach((b) => (b.onclick = () => { b.disabled = true; act({ t: "buy", i: +b.dataset.i }); }));
   document.getElementById("done").onclick = () => goStep("curate");
@@ -1205,14 +1211,21 @@ function renderBoardroom() {
   const me = snap.hostId === myId;
   app.innerHTML = `<div class="card"><h2>The Boardroom</h2>${slide}</div>
     <div class="card"><b>Standings</b>${rows}${mine}</div>
-    ${b.step === last ? (me ? '<button class="big" id="again">Play again</button>' : '<div class="card muted">Waiting for the host…</div>') : ""}`;
+    ${b.step === last
+      ? (me ? '<button class="big" id="again">Play again</button>' : '<div class="card muted">Waiting for the host…</div>')
+      : (me ? `<button class="big" id="nextslide">${b.step === 0 ? "Show the first accolade" : b.step < b.awards.length ? "Next accolade" : "And the promotion goes to…"}</button>`
+            : '<div class="card muted">Waiting for the host…</div>')}`;
   if (b.step === last && me) document.getElementById("again").onclick = () => act({ t: "again" });
+  const nx = document.getElementById("nextslide");
+  if (nx) nx.onclick = () => { nx.disabled = true; act({ t: "nextSlide" }); };
 }
 
 
 function dismissSplash() {
   const s = document.getElementById("splash");
   s.classList.add("gone");
+  mountMuteButton();
+  syncMusic("lobby"); // menu track
   renderMenu();
 }
 document.getElementById("splash").addEventListener("click", dismissSplash);

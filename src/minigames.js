@@ -182,7 +182,7 @@ function makeMathQ(tier) {
  * Shared question UI. options: { label, kind: "right" | "wrong" | "safe" | "risky" }.
  * On a penalty tier, the first wrong answer ends the task with the Boss penalty.
  */
-function questionChain(task, done, title, questions) {
+function questionChain(task, done, title, questions, wrongMsg) {
   let iv;
   const run = runner(task, done, () => clearInterval(iv));
   const scores = [];
@@ -206,7 +206,7 @@ function questionChain(task, done, title, questions) {
       b.onclick = () => {
         if (opt.kind === "wrong") {
           mistakes++;
-          if (task.penalty) return run.penalize(mistakes, { risky });
+          if (task.penalty) return run.penalize(mistakes, { risky, note: wrongMsg || "" });
           scores.push(0);
         } else if (opt.kind === "right") scores.push(1);
         else if (opt.kind === "safe") scores.push(CURVE_SCORING.safe);
@@ -234,14 +234,14 @@ const MINIGAMES = {
     const need = task.workload, hop = task.tier === "medium";
     let hits = 0;
     const run = runner(task, done);
-    const o = openOverlay(`<h3>📎 Stapler Frenzy</h3><p class="muted">${hop ? "Mash to staple. It jams and jumps every 8 staples!" : "Mash to staple the report."}</p>
+    const o = openOverlay(`<h3>📎 Stapler Frenzy</h3><p class="obj">${hop ? "Mash to staple. It jams and jumps every 4 staples!" : "Mash to staple the report."}</p>
       <div class="bar"><div class="fill" id="f"></div></div><div class="pile" id="zone"><button class="big mash" id="mash">Staple</button></div>`);
     const btn = o.querySelector("#mash"), f = o.querySelector("#f");
     btn.onpointerdown = (e) => {
       e.preventDefault();
       f.style.width = (++hits / need) * 100 + "%";
       if (hits >= need) return run.win();
-      if (hop && hits % 8 === 0) { btn.style.left = rint(22, 78) + "%"; btn.style.top = rint(25, 75) + "%"; }
+      if (hop && hits % 4 === 0) { btn.style.left = rint(15, 85) + "%"; btn.style.top = rint(18, 82) + "%"; }
     };
     return run;
   },
@@ -251,9 +251,9 @@ const MINIGAMES = {
     const tier = task.tier, n = task.workload, hard = tier === "hard";
     const contracts = tier === "medium" ? rint(1, 2) : 0;
     const run = runner(task, done);
-    const hint = hard ? "Sort it: TOP SECRET docs go in the <b>shredder</b>, everything else in the <b>trash</b>."
+    const hint = hard ? "Sort it: <b>TOP SECRET</b> docs go in the <b>shredder</b>, everything else in the <b>trash</b>."
       : contracts ? "Trash every document, but leave the <b>signed contracts</b> on the desk." : "Drag every document into the trash. It never happened.";
-    const o = openOverlay(`<h3>🗑️ Cover Your Tracks</h3><p class="muted">${hint}</p><div class="pile" id="pile"></div>
+    const o = openOverlay(`<h3>🗑️ Cover Your Tracks</h3><p class="obj">${hint}</p><div class="pile" id="pile"></div>
       <div class="bins">${hard ? '<div class="target" id="shred">✂️ Shredder</div>' : ""}<div class="target" id="bin">🗑️ Trash</div></div>`);
     const pile = o.querySelector("#pile"), bin = o.querySelector("#bin"), shred = o.querySelector("#shred");
     const targets = hard ? [shred, bin] : [bin];
@@ -289,8 +289,8 @@ const MINIGAMES = {
       const others = shuffle([...EMAILS.regular.map((s) => ({ s, cat: "regular" })), ...EMAILS.boss.map((s) => ({ s, cat: "boss" })), ...EMAILS.client.map((s) => ({ s, cat: "client" }))]).slice(0, rest);
       mail = shuffle([...shuffle(EMAILS.junk).slice(0, j).map((s) => ({ s, cat: "junk" })), ...others]);
     }
-    const hint = tier === "easy" ? "Check every email, then clear them all." : tier === "medium" ? "Check everything <b>except the Boss's emails</b>, then clear. Scroll for more." : "Check <b>only the junk</b>, leave real work alone, then clear. Scroll for more.";
-    const o = openOverlay(`<h3>📧 Inbox Zero Rush</h3><p class="muted">${hint}</p>
+    const hint = tier === "easy" ? "Check every email, then clear them all." : tier === "medium" ? "Check everything <b>EXCEPT the Boss's emails</b>, then clear. Scroll for more." : "Check <b>ONLY the junk</b>, leave real work alone, then clear. Scroll for more.";
+    const o = openOverlay(`<h3>📧 Inbox Zero Rush</h3><p class="obj">${hint}</p>
       <button class="big" id="clr">Clear all</button>
       <div class="inbox ${tier === "easy" ? "" : "scroll"}">` + mail.map((m, i) => `<label class="email cat-${m.cat}"><input type="checkbox" data-i="${i}"> ${EMAIL_ICON[m.cat]} ${m.s}</label>`).join("") + `</div>`);
     const clr = o.querySelector("#clr");
@@ -311,15 +311,16 @@ const MINIGAMES = {
     const n = task.workload, boss = task.tier === "medium";
     let left = n;
     const run = runner(task, done);
-    const o = openOverlay(`<h3>📝 Post-it Panic</h3><p class="muted">${boss ? "Rip off every note, but <b>not the Boss's red 📌 note</b>." : "Rip every sticky note off the board."}</p>
+    const o = openOverlay(`<h3>📝 Post-it Panic</h3><p class="obj">${boss ? "Rip off every note, but <b>NOT the Boss's pink note</b>." : "Rip every sticky note off the board."}</p>
       <div class="pile" id="board" style="background:#c9a36b"></div>`);
     const board = o.querySelector("#board");
     for (let i = 0; i < n; i++) {
-      const d = placeItem(board, "📝");
+      const d = placeItem(board, "", "note yellow");
       d.onpointerdown = (e) => { e.preventDefault(); d.remove(); if (--left === 0) run.win(); };
     }
     if (boss) {
-      const b = placeItem(board, "📌", "boss-note");
+      // Same size/shape as the others, just pink — so it can't visually block a clickable note
+      const b = placeItem(board, "", "note pink");
       b.onpointerdown = (e) => { e.preventDefault(); run.penalize(); }; // HR: pulled the Boss's note
     }
     return run;
@@ -330,7 +331,7 @@ const MINIGAMES = {
     const n = task.workload, med = task.tier === "medium", every = med ? 700 : 900, jamAt = med ? 2 : 4;
     let spawned = 0, shredded = 0, jams = 0, jammedUntil = 0, iv;
     const run = runner(task, done, () => clearInterval(iv));
-    const o = openOverlay(`<h3>📠 Copier Meltdown</h3><p class="muted">Drag each page into the shredder. If ${jamAt} pages pile up in the tray, it jams.</p>
+    const o = openOverlay(`<h3>📠 Copier Meltdown</h3><p class="obj">Drag each page into the shredder. If ${jamAt} pages pile up in the tray, it jams.</p>
       <div class="copier"><div class="printer">🖨️</div><div class="tray" id="tray"></div><div class="jam" id="jam" hidden>JAMMED!</div></div>
       <div class="bins"><div class="target" id="shred">✂️ Shredder</div></div><p class="muted" id="cc">0 / ${n} shredded</p>`);
     const tray = o.querySelector("#tray"), shred = o.querySelector("#shred"), jamEl = o.querySelector("#jam"), cc = o.querySelector("#cc");
@@ -370,10 +371,10 @@ const MINIGAMES = {
     const accs = [];
     const run = runner(task, done, () => cancelAnimationFrame(raf));
     const grid = [...Array(100 / labelEvery + 1).keys()].map((i) => i * labelEvery);
-    const o = openOverlay(`<h3>📊 Hit the Quota</h3><p class="muted">Hold to grow each bar. Release at its quota.${tier === "hard" ? " Bars grow fast!" : ""}</p>
+    const o = openOverlay(`<h3>📊 Hit the Quota</h3><p class="obj">Hold to grow each bar. Release at the <b>red line</b>.${tier === "hard" ? " Bars grow fast!" : ""}</p>
       <div class="chart">${grid.map((v) => `<div class="gridline" style="bottom:${v}%"><span>$${v}K</span></div>`).join("")}
-        <div class="bars">${targets.map((t, i) => `<div class="barcol"><div class="qlabel">$${t}K</div><div class="barwell">
-          <div class="tline" style="bottom:${t}%;border-color:#c62828"></div><div class="barfill" id="b${i}"></div></div></div>`).join("")}</div></div>
+        <div class="bars">${targets.map((t, i) => `<div class="barcol"><div class="barwell">
+          <div class="tline" style="bottom:${t}%;border-color:#c62828"><span class="tval">$${t}K</span></div><div class="barfill" id="b${i}"></div></div></div>`).join("")}</div></div>
       <p class="muted" id="st">Bar 1 of ${k}</p><button class="big" id="act">Hold</button>`);
     const btn = o.querySelector("#act"), st = o.querySelector("#st");
     const bar = () => o.querySelector("#b" + cur);
@@ -419,7 +420,7 @@ const MINIGAMES = {
     const accs = [];
     const run = runner(task, done, () => cancelAnimationFrame(raf));
     const ticks = tier === "medium" ? [0, 90, 180, 270].map((d) => `<div class="tick" style="transform:rotate(${d}deg)"></div>`).join("") : "";
-    const o = openOverlay(`<h3>🥧 Budget Pie</h3><p class="muted">Stop each slice at its share of the budget.${tier === "hard" ? " No guides, fast sweep!" : ""}</p>
+    const o = openOverlay(`<h3>🥧 Budget Pie</h3><p class="obj">Stop each slice at its share of the budget.${tier === "hard" ? " No guides, fast sweep!" : ""}</p>
       <div class="piewrap"><div class="pie" id="pie"></div><div class="pie ghost" id="ghost"></div>${ticks}</div>
       <p class="qtext" id="st"></p><button class="big" id="act">Lock slice</button>`);
     const pie = o.querySelector("#pie"), ghost = o.querySelector("#ghost"), st = o.querySelector("#st");
@@ -471,6 +472,6 @@ const MINIGAMES = {
       if (task.tier === "hard") options.push({ label: sneaky, kind: "wrong" });
       return { text, options: shuffle(options) };
     });
-    return questionChain(task, done, "🎯 Client Curveball", qs);
+    return questionChain(task, done, "🎯 Client Curveball", qs, "That's not how we do business here.");
   },
 };
