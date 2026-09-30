@@ -399,3 +399,17 @@ Railway, then put it FIRST in SIGNAL_SERVERS:
   { host: "your-app.onrender.com", port: 443, secure: true, path: "/" }
 Also consider filling in METERED_APP / METERED_API_KEY at the top of net.js for
 a TURN relay (free 20GB/mo), which helps players behind strict NATs connect.
+
+## Playtest round 4 fixes (v=27)
+
+1. Post-it Panic: drag to move, tap-only (no drag) removes the note
+2. Shop + loadout: all player wallets shown in a floor grid above the items
+3. Boss quotes: bubble narrower + wraps to 2-3 lines (font 12→11px, line-height 1.3→1.45, hard width cap)
+4. Nametag dot (.badge .dot) removed — was overlapping player names
+5. Boardroom: guests see a pulsing "Waiting for host to advance…" (was blank); "Back to menu" added alongside "Play again"
+6. Lobby: "Back to menu" button for the host after the code appears
+7. Game constrained to max-width 430px, centred on a dark (#1a1a2e) background on desktop — no more stretching
+8. Slack Gossip: cap 8 (was 25), new popup every 20s (was 12s), grow delay 15s (was 5s)
+9. Taken tasks: solid grey (#e0e0e0) instead of transparent tint
+10. Shop item name coloured to match the rarity border (grey/green/blue)
+11. Mobile: touch-action:manipulation on html prevents double-tap zoom; touch-action:none + user-select:none on interactive elements prevents hold-highlight

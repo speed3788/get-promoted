@@ -56,21 +56,22 @@ function placeInOffice(el, w, h) {
   el.style.top = r.top + Math.random() * Math.max(0, r.height - h) + "px";
 }
 
-// ---- 💬 Slack Gossip: a new pop-up every 12s; each one left open DOUBLES every 5s (cap 25) ------
+// ---- 💬 Slack Gossip: a new pop-up every 20s; each one left open spawns another after 15s (cap 8) ------
 function startGossip() {
   stopGossip();
-  gossipTimers.push(setTimeout(popGossip, 3000), setInterval(popGossip, 12000));
+  gossipTimers.push(setTimeout(popGossip, 3000), setInterval(popGossip, 20000));
 }
 function popGossip() {
-  if (document.querySelectorAll(".gossip").length >= 25) return;
+  if (document.querySelectorAll(".gossip").length >= 8) return; // hard cap — no more screen filling
   const g = document.createElement("div");
   g.className = "gossip";
   g.innerHTML = `<button aria-label="Dismiss">×</button><b>💬 #random</b><br>${pick(GOSSIP)}`;
   g.querySelector("button").onclick = () => g.remove();
   document.body.appendChild(g);
   placeInOffice(g, 220, 90);
-  const grow = () => { if (g.isConnected) { popGossip(); gossipTimers.push(setTimeout(grow, 5000)); } };
-  gossipTimers.push(setTimeout(grow, 5000));
+  // Each ignored pop-up spawns one more after 15s (down from 5s), but still respects the cap
+  const grow = () => { if (g.isConnected) { popGossip(); gossipTimers.push(setTimeout(grow, 15000)); } };
+  gossipTimers.push(setTimeout(grow, 15000));
 }
 function stopGossip() {
   gossipTimers.forEach((t) => { clearTimeout(t); clearInterval(t); });
@@ -191,13 +192,13 @@ function onOfficeEvents() {
 }
 
 // ---- Phase 3 polish: Boss quotes, fail bubbles, Boardroom roasts (banks locked in BACKLOG.md) ----
-const BOSS_QUOTES = [
+const BOSS_QUOTES = [ // keep under ~72 chars each so the bubble wraps to ≤3 lines
   "Dreams don't work unless you do.", "ABC: Always. Be. Closing.", "Don't wait for opportunity. Create it.",
-  "Don't watch the clock, do what it does. Keep going.", "Hustle until your haters ask if you're hiring.",
+  "Don't watch the clock — do what it does. Keep going.", "Hustle until your haters ask if you're hiring.",
   "There's no elevator to success, you have to take the stairs.", "Great things never came from comfort zones.",
-  "Work hard in silence, let your paycheck do the talking.", "Success is a marathon, not a sprint… but also hurry up.",
+  "Work hard in silence. Let your paycheck do the talking.", "Success is a marathon. Also hurry up.",
   "Teamwork makes the dream work.", "Rome wasn't built in a day, but they were laying bricks every hour.",
-  "Fall seven times, stand up eight. Then file a report on it.", "Sleep is for people without deadlines.",
+  "Fall seven times, stand up eight. File a report on it.", "Sleep is for people without deadlines.",
 ];
 const FAIL_WORDS = ["F*ck!", "God D*mn it!", "S**t!", "Dammit!", "Are you kidding me?!"];
 const WINNER_QUIPS = [

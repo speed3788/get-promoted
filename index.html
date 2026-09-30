@@ -7,8 +7,9 @@
 <link rel="preload" as="image" href="assets/office-full.jpg">
 <style>
 :root{--easy:#4CAF50;--med:#F5A623;--hard:#E53935;--ink:#232838;--paper:#fffdf6;--carpet:#6e7a8b;--memo:#ffd54f}
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;font-family:"Trebuchet MS",system-ui,sans-serif;color:var(--ink);background:var(--carpet)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html{margin:0;min-height:100%;background:#1a1a2e;display:flex;justify-content:center;touch-action:manipulation}
+body{width:100%;max-width:430px;min-height:100%;font-family:"Trebuchet MS",system-ui,sans-serif;color:var(--ink);background:var(--carpet);position:relative}
 #app{max-width:480px;margin:0 auto;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:12px}
 .card{background:var(--paper);border-radius:12px;padding:16px;border:2px solid var(--ink)}
 h1,h2,h3{margin:0 0 8px}
@@ -20,8 +21,8 @@ h1,h2,h3{margin:0 0 8px}
 .task b{font-size:18px}
 .tname{font-size:15px;font-weight:600}
 .ttier{font-size:12px;color:var(--muted);text-transform:capitalize}
-.task.taken{opacity:.80;cursor:default}.task.mine{cursor:default;opacity:.85}
-.takenby{font-size:12px;font-weight:700}
+.task.taken{opacity:1;cursor:default;background:#e0e0e0;border-color:#9e9e9e;color:#666}.task.mine{cursor:default;opacity:.85}
+.takenby{font-size:12px;font-weight:700;color:#555}
 .task:active{transform:scale(.97)}
 .shape{width:16px;height:16px;display:inline-block;vertical-align:-2px}
 .shape.easy{background:var(--easy);border-radius:50%}
@@ -73,7 +74,7 @@ h1,h2,h3{margin:0 0 8px}
 .seat.busy{box-shadow:inset 0 0 0 3px var(--c),0 0 14px 2px var(--c)}
 .badge{position:absolute;left:50%;top:0;transform:translate(-50%,-50%);max-width:96%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   background:var(--paper);border:2px solid var(--c);border-radius:8px;padding:1px 6px;font-size:11px;line-height:1.35;text-align:center}
-.badge .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:3px}
+/* .badge .dot removed */
 .strip{position:absolute;left:50%;top:26.5%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;padding:3px 7px;background:#fffdf6e6;border:2px solid var(--ink);border-radius:8px}
 .strip .shape{width:12px;height:12px}
 .strip .shape.hard{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--hard)}
@@ -150,6 +151,8 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 .pickhdr{display:flex;flex-direction:column;gap:2px;padding:10px 14px;background:#232838;border-radius:10px;border:2px solid #232838}
 .pickttl{font-size:20px;font-weight:900;color:#fff}
 .pickhdr .muted{font-size:14px;color:#d0cfc8;min-height:18px}
+.waiting-host{text-align:center;font-size:15px;animation:waitpulse 1.4s ease-in-out infinite;margin:12px 0}
+@keyframes waitpulse{0%,100%{opacity:.4}50%{opacity:1}}
 .review-banner{background:#c62828;color:#fff;font-weight:800;text-align:center;padding:8px;border-radius:10px;border:2px solid var(--ink)}
 .board.reviewing .task{position:relative}
 .board.reviewing .task::after{content:"REVIEW";position:absolute;right:6px;top:6px;color:#c62828;border:2px solid #c62828;font-size:11px;font-weight:900;padding:0 4px;transform:rotate(8deg);border-radius:4px}
@@ -166,7 +169,7 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 .paces button small{display:block;font-weight:400;font-size:12px;opacity:.7}
 .paces button.on{background:var(--memo)}
 .paces button:disabled{cursor:default;opacity:.85}
-.bossquote{position:absolute;z-index:4;left:61%;top:max(12%,58px);max-width:36%;background:#fff;border:2px solid var(--ink);border-radius:12px;padding:6px 9px;font-size:12px;font-weight:700;line-height:1.3;box-shadow:0 3px 8px #0004;animation:quotein .3s ease-out}
+.bossquote{position:absolute;z-index:4;left:57%;top:max(10%,50px);width:40%;max-width:155px;background:#fff;border:2px solid var(--ink);border-radius:12px;padding:6px 10px;font-size:11px;font-weight:700;line-height:1.45;white-space:normal;word-break:break-word;box-shadow:0 3px 8px #0004;animation:quotein .3s ease-out}
 .bossquote::before{content:"";position:absolute;left:-10px;top:14px;border:6px solid transparent;border-right:9px solid var(--ink)}
 @keyframes quotein{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
 .failbubble{position:fixed;z-index:12;transform:translate(-50%,-100%);background:#fff;border:3px solid #c62828;color:#c62828;border-radius:14px;padding:4px 10px;font-weight:900;font-size:15px;white-space:nowrap;animation:failpop 2.2s ease-out forwards;pointer-events:none}
@@ -197,6 +200,7 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 .timer{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden}
 .timer div{height:100%;background:var(--memo)}
 </style>
+<style>button,input[type=range],.pile,.chart,.board,.item,.note{touch-action:none;user-select:none;-webkit-user-select:none}</style>
 </head>
 <body>
 <div id="scene" aria-hidden="true"><div class="scene-box"><img id="sceneImg" src="assets/office-empty.jpg" alt="">
@@ -204,10 +208,10 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 <div id="splash" role="button" tabindex="0" aria-label="Tap to begin"><img src="assets/landing.jpg" alt="Get Promoted! A Corporate Ascent Game"></div>
 <div id="app"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="src/data-model.js?v=26"></script>
-<script src="src/net.js?v=26"></script>
-<script src="src/minigames.js?v=26"></script>
-<script src="src/office-events.js?v=26"></script>
-<script src="src/game.js?v=26"></script>
+<script src="src/data-model.js?v=28"></script>
+<script src="src/net.js?v=28"></script>
+<script src="src/minigames.js?v=28"></script>
+<script src="src/office-events.js?v=28"></script>
+<script src="src/game.js?v=28"></script>
 </body>
 </html>

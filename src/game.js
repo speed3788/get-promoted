@@ -927,10 +927,11 @@ function renderLobby() {
     <div class="floor" style="margin:12px 0">${seats}</div>
     <p class="muted" style="margin:0 0 4px">Day length${me ? "" : " (the host picks)"}</p>
     <div class="paces" id="lpaces">${Object.entries(PACES).map(([k, [label]]) => `<button data-p="${k}" class="${k === snap.pace ? "on" : ""}" ${me ? "" : "disabled"}>${label}</button>`).join("")}</div>
-    ${me ? '<button class="big" id="start">Start the week</button>' : '<p class="muted">Waiting for the host to start…</p>'}</div>`;
+    ${me ? '<button class="big" id="start">Start the week</button><button class="big sec" id="backtomenu" style="margin-top:8px">Back to menu</button>' : '<p class="muted">Waiting for the host to start…</p>'}</div>`;
   if (me) {
     document.getElementById("copy").onclick = (e) => { navigator.clipboard?.writeText(snap.code); e.target.textContent = "Copied"; };
     document.getElementById("start").onclick = () => act({ t: "start" });
+    document.getElementById("backtomenu").onclick = () => { try { Net.destroy?.(); } catch {} location.reload(); };
     document.querySelectorAll("#lpaces button").forEach((b) => (b.onclick = () => { localStorage.setItem("gp-pace", b.dataset.p); act({ t: "pace", v: b.dataset.p }); }));
   }
 }
@@ -967,8 +968,7 @@ function renderDay() {
     const takenByOther = who && who.id !== myId;
     const takenByMe = who && who.id === myId;
     const color = who ? colorOf(who.id) : null;
-    return `<button class="task${takenByOther ? " taken" : takenByMe ? " mine" : ""}" data-id="${t.id}"
-      style="${color && takenByOther ? `border-color:${color};background:${color}18` : ""}">
+    return `<button class="task${takenByOther ? " taken" : takenByMe ? " mine" : ""}" data-id="${t.id}">
       <span class="shape ${t.tier}"></span><b>${money(t.baseValue)}</b>
       <span class="tname">${NAMES[t.flavor]}</span>
       ${takenByOther ? `<span class="takenby" style="color:${color}">${esc(who.name)}</span>` : takenByMe ? `<span class="takenby" style="color:${color}">You</span>` : `<span class="ttier">${t.tier}</span>`}
@@ -1038,7 +1038,7 @@ function updateStage(label) {
     const pop = prevWallets[p.id] !== undefined && prevWallets[p.id] !== p.wallet;
     prevWallets[p.id] = p.wallet;
     return `<div class="seat${p.busy ? " busy" : ""}${p.id === myId ? " me" : ""}" style="left:${l}%;top:${t}%;width:${w}%;height:${h}%;--c:${colorOf(p.id)}">
-      <div class="badge"><span class="dot"></span><b>${esc(p.name)}</b>${p.id === myId ? " (you)" : ""}<br>${label(p, pop)}</div></div>`;
+      <div class="badge"><b>${esc(p.name)}</b>${p.id === myId ? " (you)" : ""}<br>${label(p, pop)}</div></div>`;
   }).join("");
   const strip = document.getElementById("strip");
   if (strip) {
@@ -1136,14 +1136,16 @@ function renderSummary() {
 
 function renderShop() {
   app.innerHTML = `<div class="card"><h2>Supply closet</h2>
-    <p class="muted">Night ${snap.day}. You have <b>${money(player.wallet)}</b>. Items wait in your inventory until you use them. Each one works for one day, then it's gone.</p></div>
+    <p class="muted">Night ${snap.day}. You have <b>${money(player.wallet)}</b>. Items work for one day, then they're gone.</p>
+    <div class="floor" style="margin:4px 0 0">${[...snap.players].sort((a,b)=>b.wallet-a.wallet).map(p=>`<div class="chip"><span style="color:${colorOf(p.id)}">●</span> ${esc(p.name)}${p.id===myId?" (you)":""} 💰${money(p.wallet)}</div>`).join("")}</div></div>
     <div class="shop">` + snap.shop.map((c, i) => {
       const [name, desc] = ITEM_INFO[c.id], afford = player.wallet >= c.price;
       const have = player.inventory.filter((x) => x === c.id).length;
       const sab = isSabotage(c.id);
       return `<div class="item-card" style="border-color:${TIER_BORDER[c.tier]}">
         <div class="itemtype ${sab ? "sab" : "boost"}">${sab ? "😈 <b>SABOTAGE</b>" : "⬆️ <b>BOOST</b>"}
-          <span class="rarity" style="color:${TIER_BORDER[c.tier]}">${c.tier}</span></div><b>${name}</b>
+          <span class="rarity" style="color:${TIER_BORDER[c.tier]}">${c.tier}</span></div>
+        <b style="color:${TIER_BORDER[c.tier]}">${name}</b>
         <div class="muted">${desc}</div>${have ? `<div class="muted">You have ${have}</div>` : ""}
         <button class="${sab ? "sabbtn" : "boostbtn"}" data-i="${i}" ${c.bought || !afford ? "disabled" : ""}>${c.bought ? "Bought" : (afford ? "Buy " : "Need ") + money(c.price)}</button></div>`;
     }).join("") + `</div><button class="big" id="done">Choose tomorrow's items</button>`;
@@ -1229,10 +1231,13 @@ function renderBoardroom() {
   app.innerHTML = `<div class="card"><h2>The Boardroom</h2>${slide}</div>
     <div class="card"><b>Standings</b>${rows}${mine}</div>
     ${b.step === last
-      ? (me ? '<button class="big" id="again">Play again</button>' : '<div class="card muted">Waiting for the host…</div>')
+      ? (me ? '<button class="big" id="again">Play again</button><button class="big sec" id="tomenu" style="margin-top:8px">Back to menu</button>' : '<div class="card"><p class="waiting-host">⏳ Waiting for the host to advance…</p></div>')
       : (me ? `<button class="big" id="nextslide">${b.step === 0 ? "Show the first accolade" : b.step < b.awards.length ? "Next accolade" : "And the promotion goes to…"}</button>`
-            : '<div class="card muted">Waiting for the host…</div>')}`;
-  if (b.step === last && me) document.getElementById("again").onclick = () => act({ t: "again" });
+            : '<div class="card"><p class="waiting-host">⏳ Waiting for the host to advance…</p></div>')}`;
+  if (b.step === last && me) {
+    document.getElementById("again").onclick = () => act({ t: "again" });
+    document.getElementById("tomenu").onclick = () => { Net.destroy?.(); location.reload(); };
+  }
   const nx = document.getElementById("nextslide");
   if (nx) nx.onclick = () => { nx.disabled = true; act({ t: "nextSlide" }); };
 }

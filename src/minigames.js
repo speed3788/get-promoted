@@ -47,17 +47,33 @@ function runner(task, done, cleanup) {
 
 /** Drag el onto one of `targets` (mouse or touch). onDrop(index) fires on a hit; misses snap back. */
 function dragTo(el, targets, onDrop) {
-  let sx, sy;
-  el.onpointerdown = (e) => { e.preventDefault(); sx = e.clientX; sy = e.clientY; try { el.setPointerCapture(e.pointerId); } catch {} };
+  // ox/oy: the cumulative committed offset so dragging is always relative to where it last rested
+  let sx, sy, ox = 0, oy = 0;
+  el.onpointerdown = (e) => {
+    e.preventDefault();
+    try { el.setPointerCapture(e.pointerId); } catch {}
+    sx = e.clientX; sy = e.clientY;
+    el.style.zIndex = 20; // bring to front while dragging
+    el.style.transition = "none";
+  };
   el.onpointermove = (e) => {
-    if (el.hasPointerCapture?.(e.pointerId)) el.style.transform = `translate(${e.clientX - sx}px,${e.clientY - sy}px)`;
+    if (!el.hasPointerCapture?.(e.pointerId)) return;
+    el.style.transform = `translate(${ox + e.clientX - sx}px,${oy + e.clientY - sy}px)`;
   };
   el.onpointerup = (e) => {
+    el.style.zIndex = "";
+    el.style.transition = "";
     const i = targets.findIndex((t) => {
       const r = t.getBoundingClientRect();
       return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
     });
-    if (i >= 0) onDrop(i); else el.style.transform = "";
+    if (i >= 0) {
+      onDrop(i); // landed on a target — action fires
+    } else {
+      // Commit the new position so the item stays where the player moved it
+      ox += e.clientX - sx;
+      oy += e.clientY - sy;
+    }
   };
 }
 
@@ -314,15 +330,34 @@ const MINIGAMES = {
     const o = openOverlay(`<h3>📝 Post-it Panic</h3><p class="obj">${boss ? "Rip off every note, but <b>NOT the Boss's pink note</b>." : "Rip every sticky note off the board."}</p>
       <div class="pile" id="board" style="background:#c9a36b"></div>`);
     const board = o.querySelector("#board");
-    for (let i = 0; i < n; i++) {
-      const d = placeItem(board, "", "note yellow");
-      d.onpointerdown = (e) => { e.preventDefault(); d.remove(); if (--left === 0) run.win(); };
+    /** Make a note draggable; only a clean tap (no drag) triggers the action. */
+    function makeNote(cls, action) {
+      const d = placeItem(board, "", "note " + cls);
+      let startX, startY, dragging = false;
+      d.onpointerdown = (e) => {
+        e.preventDefault(); d.setPointerCapture(e.pointerId);
+        startX = e.clientX; startY = e.clientY; dragging = false;
+        d.style.zIndex = 10; d.style.transition = "none";
+      };
+      d.onpointermove = (e) => {
+        if (!d.hasPointerCapture(e.pointerId)) return;
+        const dx = e.clientX - startX, dy = e.clientY - startY;
+        if (!dragging && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) dragging = true;
+        if (dragging) {
+          // Move note as % of the board
+          const r = board.getBoundingClientRect();
+          d.style.left = Math.min(90, Math.max(0, (e.clientX - r.left) / r.width * 100)) + "%";
+          d.style.top  = Math.min(90, Math.max(0, (e.clientY - r.top)  / r.height * 100)) + "%";
+        }
+      };
+      d.onpointerup = (e) => {
+        d.style.zIndex = ""; d.style.transition = "";
+        if (!dragging) action.call(d); // clean tap only — d is `this`
+      };
+      return d;
     }
-    if (boss) {
-      // Same size/shape as the others, just pink — so it can't visually block a clickable note
-      const b = placeItem(board, "", "note pink");
-      b.onpointerdown = (e) => { e.preventDefault(); run.penalize(); }; // HR: pulled the Boss's note
-    }
+    for (let i = 0; i < n; i++) makeNote("yellow", function() { this.remove(); if (--left === 0) run.win(); });
+    if (boss) makeNote("pink", () => run.penalize());
     return run;
   },
 
