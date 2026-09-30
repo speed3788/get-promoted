@@ -91,6 +91,131 @@ const newTask = (tier) => createTask({ id: nextId++, tier }); // flavor randomiz
  * Everything affecting player p today: their own Boosts + Sabotages aimed at them
  * (directly or via "👥 Everyone else"). Bribe HR blocks every incoming sabotage.
  */
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EMPLOYEE HANDBOOK — New Hire Onboarding
+// ═══════════════════════════════════════════════════════════════════════════
+
+const HANDBOOK_SLIDES = [
+  { title: "Welcome to the Team 👋", body: "Congratulations on your new role. Your performance will be evaluated continuously. Compensation is performance-based. Please do not discuss compensation with coworkers." },
+  { title: "Your Responsibilities 📋", body: "Each day you will be assigned tasks by the Boss. Complete them quickly and accurately. Speed and quality are both measured. Mediocrity is noted." },
+  { title: "Compensation Structure 💰", body: "Tasks pay between $5 and $55 depending on difficulty. Faster completions earn a speed bonus. You will never see your coworkers' balances. This is intentional." },
+  { title: "The Supply Closet 🛒", body: "Each evening, employees may visit the Supply Closet to purchase items. Boosts improve your own performance. Sabotages are applied to coworkers. Both are company-approved." },
+  { title: "Interdepartmental Relations 😈", body: "Sabotages are a normal part of office culture. You may receive a Surprise Meeting, a Frozen Paycheck, or a visit from HR. This is not personal. It is strategy." },
+  { title: "Day 5 — Project Week 📊", body: "On your fifth day, all employees work on the same Projects simultaneously. Finish fast for a time bonus. The leaderboard is public. Feelings are private." },
+  { title: "The Boardroom 🏆", body: "At the end of the week, Career Earnings are revealed. Three accolades are awarded. One employee is promoted. The others are not. Best of luck." },
+  { title: "You Are Ready 🎉", body: "That concludes your onboarding. Please proceed to your workstation. Remember: the Boss is always watching. Your coworkers are not your friends. Good luck out there." },
+];
+const TRAINING_MODULES = [
+  { dept: "Productivity",   games: ["staplerFrenzy"] },
+  { dept: "Operations",     games: ["coverYourTracks", "copierMeltdown", "postItPanic"] },
+  { dept: "Communications", games: ["inboxZeroRush"] },
+  { dept: "Analytics",      games: ["hitTheQuota", "budgetPie"] },
+  { dept: "Strategy",       games: ["quarterlyCrunch", "clientCurveball"] },
+];
+const GAME_HOWTO = {
+  staplerFrenzy:   "Mash the Staple button as fast as you can to staple the report. On Medium it jumps around — keep up.",
+  coverYourTracks: "Drag every document into the Trash. On Medium, leave signed contracts on the desk. On Hard, sort TOP SECRET files into the Shredder instead.",
+  copierMeltdown:  "Drag each page into the Shredder before the tray fills up. If too many pages pile up it jams.",
+  postItPanic:     "Tap every yellow Post-it to rip it off the board. On Medium and Hard, leave the Boss's pink note alone — HR is watching.",
+  inboxZeroRush:   "Check every email then hit Clear All. On Medium, skip the Boss's emails. On Hard, check only the junk.",
+  hitTheQuota:     "Hold the button to grow each bar and release exactly at the red line. The axis scales up on harder tiers.",
+  budgetPie:       "Stop each sweeping slice at its target percentage. Tick marks disappear on Hard — you'll have to eyeball it.",
+  quarterlyCrunch: "Pick the right answer to each quarterly finance question. Wrong answers on Medium and Hard earn a 1-on-1 with the Boss.",
+  clientCurveball: "Handle a client situation. Safe is reliable, Risky is a gamble, Wrong gets you in trouble. On Hard, one option is sneakily wrong.",
+};
+const TIERS = ["easy", "medium", "hard"];
+
+function tutorialTask(flavor, tier) {
+  const t = createTask({ id: 9999, tier, flavor });
+  t.cap = 9999; t.penalty = null; return t;
+}
+function runTutorialGame(flavor, tier, onExit) {
+  if (!player) { // tutorial can be accessed before a game starts — provide a minimal stub
+    window._tutPlayer = window._tutPlayer || { fx: {}, wallet: 0, id: "tut" };
+    player = window._tutPlayer;
+  }
+  player.fx = player.fx || {};
+  const task = tutorialTask(flavor, tier);
+  MINIGAMES[flavor](task, () => {
+    const ov = document.getElementById("ov");
+    if (!ov) return;
+    ov.innerHTML = `<div class="card"><h2>✅ Nice work!</h2>
+      <p class="muted">That's the basics. Try a harder difficulty or pick a different module.</p>
+      <button class="big" id="tryagain">Try again</button>
+      <button class="big sec" id="trydone" style="margin-top:8px">← Back</button></div>`;
+    ov.querySelector("#tryagain").onclick = () => { ov.remove(); runTutorialGame(flavor, tier, onExit); };
+    ov.querySelector("#trydone").onclick  = () => { ov.remove(); onExit(); };
+  });
+}
+function renderHandbook() {
+  setScene(false); screenKey = "handbook";
+  app.innerHTML = `<div class="card hb-card">
+    <p class="hb-george">👋 Hi! Welcome to your first day. My name is <b>George</b>, and I'll be taking you through your new hire onboarding. Please read everything carefully. There will not be a quiz. There will, however, be consequences.</p>
+    <div class="hb-tabs"><button class="hb-tab on" id="tab-slides">📖 Company Overview</button><button class="hb-tab" id="tab-training">🎮 Training Modules</button></div>
+    <div id="hb-body"></div>
+    <button class="big sec" id="hb-back" style="margin-top:12px">← Back to menu</button>
+  </div>`;
+  document.getElementById("tab-slides").onclick   = () => switchHbTab("slides");
+  document.getElementById("tab-training").onclick = () => switchHbTab("training");
+  document.getElementById("hb-back").onclick      = () => { if (document.getElementById("ov")) document.getElementById("ov").remove(); renderMenu(); };
+  switchHbTab("slides");
+}
+function switchHbTab(tab) {
+  document.querySelectorAll(".hb-tab").forEach((b) => b.classList.toggle("on", b.id === `tab-${tab}`));
+  if (tab === "slides") renderSlides(); else renderTraining();
+}
+function renderSlides() {
+  let idx = 0;
+  const body = document.getElementById("hb-body");
+  const draw = () => {
+    const sl = HANDBOOK_SLIDES[idx];
+    body.innerHTML = `<div class="hb-slide">
+      <div class="hb-slide-count">${idx + 1} / ${HANDBOOK_SLIDES.length}</div>
+      <h2 class="hb-slide-title">${sl.title}</h2>
+      <p class="hb-slide-body">${sl.body}</p>
+      <div class="hb-slide-nav">
+        <button class="big sec hb-nav" id="prev" ${idx === 0 ? "disabled" : ""}>← Prev</button>
+        <button class="big hb-nav" id="next">${idx === HANDBOOK_SLIDES.length - 1 ? "Done ✓" : "Next →"}</button>
+      </div></div>`;
+    body.querySelector("#prev").onclick = () => { if (idx > 0) { idx--; draw(); } };
+    body.querySelector("#next").onclick = () => { if (idx < HANDBOOK_SLIDES.length - 1) { idx++; draw(); } else switchHbTab("training"); };
+  };
+  draw();
+}
+function renderTraining() {
+  const body = document.getElementById("hb-body");
+  body.innerHTML = `<div class="hb-dept-list">${TRAINING_MODULES.map((m, i) =>
+    `<button class="big hb-dept" data-i="${i}">${m.dept}</button>`).join("")}</div>`;
+  body.querySelectorAll(".hb-dept").forEach((b) => (b.onclick = () => renderDept(+b.dataset.i)));
+}
+function renderDept(deptIdx) {
+  const mod = TRAINING_MODULES[deptIdx];
+  if (mod.games.length === 1) { renderHowTo(mod.games[0], deptIdx, "easy"); return; }
+  const body = document.getElementById("hb-body");
+  body.innerHTML = `<div class="hb-game-list">
+    ${mod.games.map((f) => `<button class="big hb-game" data-f="${f}">${NAMES[f]}</button>`).join("")}
+    <button class="big sec" style="margin-top:4px" id="back-dept">← Departments</button></div>`;
+  body.querySelectorAll(".hb-game").forEach((b) => (b.onclick = () => renderHowTo(b.dataset.f, deptIdx, "easy")));
+  body.querySelector("#back-dept").onclick = () => renderTraining();
+}
+function renderHowTo(flavor, deptIdx, tier) {
+  const mod = TRAINING_MODULES[deptIdx];
+  const hasTier = (t) => !!LADDER[flavor]?.[t];
+  const body = document.getElementById("hb-body");
+  body.innerHTML = `<div class="hb-howto">
+    <h3>${NAMES[flavor]}</h3>
+    <p class="hb-howto-text">${GAME_HOWTO[flavor]}</p>
+    <div class="hb-tiers">${TIERS.filter(hasTier).map((t) =>
+      `<button class="hb-tier${t === tier ? " on" : ""}" data-t="${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join("")}</div>
+    <button class="big" id="tryit">▶ Try it</button>
+    <button class="big sec" id="back-howto" style="margin-top:8px">${mod.games.length > 1 ? "← Back" : "← Departments"}</button>
+  </div>`;
+  body.querySelectorAll(".hb-tier").forEach((b) => (b.onclick = () => renderHowTo(flavor, deptIdx, b.dataset.t)));
+  body.querySelector("#tryit").onclick    = () => { if (document.getElementById("ov")) document.getElementById("ov").remove(); runTutorialGame(flavor, tier, () => renderHowTo(flavor, deptIdx, tier)); };
+  body.querySelector("#back-howto").onclick = () => mod.games.length > 1 ? renderDept(deptIdx) : renderTraining();
+}
+
 function fxFor(p) {
   const mine = new Set(p.activeToday.map((a) => a.id));
   const hits = {};
@@ -891,6 +1016,7 @@ function renderMenu(err = "") {
     <p>Grab tasks from the boss, finish them fast, bank the cash. Spend it each night on boosts for you and sabotages for your coworkers.</p>
     <label class="muted" for="name">Your name</label>
     <input id="name" class="text" maxlength="12" value="${esc(saved)}" placeholder="Jordan">
+    <button class="hb-entry" id="onboarding">👋 New Hire Onboarding</button>
     <p class="muted" style="margin:0 0 4px">Day length (when you host or play solo)</p>
     <div class="paces" id="paces">${Object.entries(PACES).map(([k, [label, s]]) => `<button data-p="${k}" class="${k === (localStorage.getItem("gp-pace") || "frantic") ? "on" : ""}">${label}<small>${s / 60 === 1 ? "1:00" : s === 90 ? "1:30" : "2:00"}</small></button>`).join("")}</div>
     <div class="stack"><button class="big" id="solo">Play solo vs bots</button><button class="big" id="host">Host a game</button></div>
@@ -904,6 +1030,7 @@ function renderMenu(err = "") {
     localStorage.setItem("gp-pace", b.dataset.p);
     document.querySelectorAll("#paces button").forEach((x) => x.classList.toggle("on", x === b));
   }));
+  document.getElementById("onboarding").onclick = () => renderHandbook();
   document.getElementById("solo").onclick = () => startHosting(name(), false);
   document.getElementById("host").onclick = () => startHosting(name(), true);
   document.getElementById("join").onclick = () => {
