@@ -726,7 +726,9 @@ function snapshotFor(pid) {
     players: state.players.map((p) => p.id === pid
       ? { ...p, bot: undefined, priv: undefined, busy: !!p.currentTask, lockLeft: Math.max(0, ((p.lockUntil || 0) - performance.now()) / 1000),
           interrupt: p.interrupt && { ...p.interrupt, left: Math.max(0, (p.interrupt.until - performance.now()) / 1000) },
-          reviewLeft: p.fx?.review && state.phase === "task" ? Math.max(0, 30 - (performance.now() - dayStartAt) / 1000) : 0 }
+          reviewLeft: p.fx?.review && state.phase === "task" ? Math.max(0, 30 - (performance.now() - dayStartAt) / 1000) : 0,
+          sabotagesOnMe: state.players.flatMap((o) => o === p ? [] : o.activeToday.filter((a) => isSabotage(a.id) && (a.targetId === p.id || a.targetId === "*")).map((a) => a.id)),
+          boostsOnMe: p.activeToday.filter((a) => !isSabotage(a.id)).map((a) => a.id) }
       : { id: p.id, name: p.name, isBot: p.isBot, wallet: p.wallet, ready: p.ready, busy: !!(p.currentTask || p.bot?.current), failSeq: p.failSeq || 0, failWord: p.failWord,
           proj: p.proj && { k: p.proj.k, done: p.proj.done } }),
   };
@@ -1081,7 +1083,8 @@ function renderDay() {
     app.innerHTML = hudHtml(`Day ${snap.day} of 5`) + `<div class="panel">
       <div class="review-banner" id="review" hidden></div>
       <div class="pickhdr"><span class="pickttl">Pick a task</span><span class="muted" id="msg"></span></div>
-      <div class="board" id="board"></div></div>`;
+      <div class="board" id="board"></div></div>
+    <div class="day-status" id="daystatus"></div>`;
     startedTaskId = null;
     showDeskItems();
     startBossQuotes();
@@ -1089,6 +1092,19 @@ function renderDay() {
   }
   updateStage((p, pop) => `<span class="${pop ? "pop" : ""}">💰${money(p.wallet)}</span>`);
   document.getElementById("msg").textContent = "Finish fast for more pay. Others are grabbing tasks too.";
+  const dsEl = document.getElementById("daystatus");
+  if (dsEl) {
+    const sabs = player.sabotagesOnMe || [], boosts = player.boostsOnMe || [];
+    const sabHtml = sabs.length ? `<div class="ds-row ds-sab">${sabs.map((id) => `<span>${ITEM_INFO[id][0]}</span>`).join("")}</div>` : "";
+    const boostHtml = boosts.length ? `<div class="ds-row ds-boost">${boosts.map((id) => `<span>${ITEM_INFO[id][0]}</span>`).join("")}</div>` : "";
+    dsEl.innerHTML = sabHtml + boostHtml;
+    dsEl.hidden = !sabHtml && !boostHtml;
+    // Position just below the task panel (both are fixed so we align them in JS)
+    if (!dsEl.hidden) {
+      const panel = document.querySelector(".panel");
+      if (panel) dsEl.style.top = (panel.getBoundingClientRect().bottom + 6) + "px";
+    }
+  }
   const board = document.getElementById("board");
   board.innerHTML = snap.view.map((t) => {
     const who = t._owned ? snap.players.find((pl) => pl.id === t._ownerId) : null;

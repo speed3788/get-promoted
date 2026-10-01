@@ -223,6 +223,12 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 .hb-tiers{display:flex;gap:6px;margin-bottom:10px}
 .hb-tier{font:inherit;font-size:13px;font-weight:700;padding:5px 12px;border-radius:20px;border:2px solid var(--ink);background:transparent;cursor:pointer;text-transform:capitalize}
 .hb-tier.on{background:var(--ink);color:#fff}
+.day-status{position:fixed;z-index:3;left:50%;transform:translateX(-50%);width:min(max(456px,calc(min(100vw,66.667dvh)*0.58)),calc(100vw - 24px));display:flex;flex-direction:column;gap:4px}
+.day-status[hidden]{display:none}
+.ds-row{display:flex;flex-wrap:wrap;gap:6px;padding:5px 10px;border-radius:8px;font-size:13px;font-weight:700}
+.ds-sab{background:#fdecea;color:#c62828;border:1.5px solid #ef9a9a}
+.ds-boost{background:#e8f5e9;color:#2e7d32;border:1.5px solid #a5d6a7}
+.ds-row span{white-space:nowrap}
 .timer{height:8px;background:#ffffff33;border-radius:4px;overflow:hidden}
 .timer div{height:100%;background:var(--memo)}
 </style>
@@ -234,10 +240,10 @@ svg.trend polyline{fill:none;stroke:#378ADD;stroke-width:2.5;vector-effect:non-s
 <div id="splash" role="button" tabindex="0" aria-label="Tap to begin"><div id="splash-inner"><img src="assets/landing.jpg" alt="Get Promoted! A Corporate Ascent Game"></div></div>
 <div id="app"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="src/data-model.js?v=44"></script>
-<script src="src/net.js?v=44"></script>
-<script src="src/minigames.js?v=44"></script>
-<script src="src/office-events.js?v=44"></script>
-<script src="src/game.js?v=44"></script>
+<script src="src/data-model.js?v=45"></script>
+<script src="src/net.js?v=45"></script>
+<script src="src/minigames.js?v=45"></script>
+<script src="src/office-events.js?v=45"></script>
+<script src="src/game.js?v=45"></script>
 </body>
 </html>
