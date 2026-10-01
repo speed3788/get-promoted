@@ -337,15 +337,22 @@ function interruptsTick() {
 /** Apply a minigame result + item effects and bank the payout. Returns null on failure. */
 function settle(p, task, r) {
   p.stats.riskyChoicesCount += r.risky || 0;
-  if (!r.success) { p.stats.mistakesCount++; failed(p); return null; }
-  p.stats.mistakesCount += r.mistakes || 0;
+  if (!r.success) { p.stats.mistakesCount++; p.dailyMistakes = (p.dailyMistakes||0)+1; failed(p); return null; }
+  const todayM = r.mistakes || 0;
+  p.stats.mistakesCount += todayM;
+  p.dailyMistakes = (p.dailyMistakes||0) + todayM;
   if (r.penalty) failed(p);
-  if (r.penalty) { // Boss/HR penalty: the whole task pays $0 and the player is locked out
-    p.stats.lockouts = (p.stats.lockouts || 0) + 1;
-    p.lockUntil = performance.now() + LOCKOUT_SECONDS * 1000;
-    p.lockKind = r.penalty;
+  if (r.penalty) { // Boss/HR penalty: $0; lockout only from Day 2 onwards
+    if (state.day > 1) {
+      p.stats.lockouts = (p.stats.lockouts || 0) + 1;
+      p.lockUntil = performance.now() + LOCKOUT_SECONDS * 1000;
+      p.lockKind = r.penalty;
+      task.state = "completed";
+      return { pay: 0, penalty: r.penalty };
+    }
+    // Day 1: mistake already counted, task pays $0, but no lockout and no penalty message
     task.state = "completed";
-    return { pay: 0, penalty: r.penalty };
+    return { pay: 0, penalty: null };
   }
   const plain = Math.round(task.baseValue * r.accuracy * Math.min(r.speed, p.fx.speedCap) * 10) / 10; // pay with no boosts
   task.accuracy = r.accuracy;
