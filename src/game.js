@@ -1104,8 +1104,8 @@ function renderDay() {
   const dsEl = document.getElementById("daystatus");
   if (dsEl) {
     const sabs = player.sabotagesOnMe || [], boosts = player.boostsOnMe || [];
-    const sabHtml = sabs.length ? `<div class="ds-row ds-sab">${sabs.map((id) => `<span>${ITEM_INFO[id][0]}</span>`).join("")}</div>` : "";
-    const boostHtml = boosts.length ? `<div class="ds-row ds-boost">${boosts.map((id) => `<span>${ITEM_INFO[id][0]}</span>`).join("")}</div>` : "";
+    const sabHtml = sabs.length ? `<div class="ds-row ds-sab">${sabs.map((id) => `<span class="ds-pill">${ITEM_INFO[id][0]}</span>`).join("")}</div>` : "";
+    const boostHtml = boosts.length ? `<div class="ds-row ds-boost">${boosts.map((id) => `<span class="ds-pill">${ITEM_INFO[id][0]}</span>`).join("")}</div>` : "";
     dsEl.innerHTML = sabHtml + boostHtml;
     dsEl.hidden = !sabHtml && !boostHtml;
     // Position just below the task panel (both are fixed so we align them in JS)
