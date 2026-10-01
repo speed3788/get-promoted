@@ -27,7 +27,7 @@ const NAMES = {
   hitTheQuota: "📊 Hit the Quota", budgetPie: "🥧 Budget Pie", trendLine: "📈 Trend Line",
   quarterlyCrunch: "🧮 Quarterly Crunch", clientCurveball: "🎯 Client Curveball",
 };
-const PENALTY_MSG = { boss: "👔 That's not how we do business here.", hr: "🧑‍💼 HR wants a chat." };
+const PENALTY_MSG = { boss: "👔 The Boss wants a 1 on 1 with you. That's not how we do business here.", hr: "🧑‍💼 HR wants a chat." };
 const ITEM_INFO = {
   powerNetworking: ["Power Networking", "+10% pay on every task — for every task you do today"],
   doubleEspresso: ["Double Espresso", "Finish tasks 15% faster"],
@@ -444,6 +444,7 @@ function doStartDay(day) {
     p.fx = fxFor(p);
     p.frozenLeft = p.fx.frozen ? 1 + Math.floor(Math.random() * 2) : 0;
     p.aiLeft = p.fx.aiTokens ? 5 : 0;
+    p.dailyMistakes = 0; // resets each day
     Object.assign(p, { currentTask: null, priv: {}, lastMsg: "" });
     if (p.isBot) p.bot = { nextAt: now + rand(600, 1400), current: null };
     countSabotages(p);
@@ -492,6 +493,7 @@ function startProjects() {
   state.day = 5;
   state.phase = "projectsIntro";
   state.players.forEach((p) => {
+    p.dailyMistakes = 0;
     p.fx = fxFor(p); // Bribe the Boss / Performance Review have no board to act on today
     p.frozenLeft = p.fx.frozen ? 1 + Math.floor(Math.random() * 2) : 0;
     p.aiLeft = 0; // AI Tokens only work on Easy tasks; there are none today
@@ -965,8 +967,8 @@ function updateLockScreen() {
     el.id = "lockov";
     el.className = "overlay lock";
     el.innerHTML = `<div class="card lockcard">${kind === "boss" ? '<div class="bossface"></div>' : '<div class="hrface">🧑‍💼</div>'}
-      <h2>${kind === "boss" ? "That's not how we do business here." : "HR wants a chat."}</h2>
-      <p class="muted">That task paid $0.</p><div class="code-big" id="lockc"></div></div>`;
+      <h2>${kind === "boss" ? "The Boss wants a 1 on 1 with you." : "HR wants a chat."}</h2>
+      <p class="muted">${kind === "boss" ? "That's not how we do business here. " : ""}That task paid $0.</p><div class="code-big" id="lockc"></div></div>`;
     document.body.appendChild(el);
   }
   el.querySelector("#lockc").textContent = Math.ceil(left) + "s";
@@ -1270,9 +1272,18 @@ function standings() {
 
 function renderSummary() {
   const s = player.stats;
+  const dm = player.dailyMistakes || 0;
+  const isDay1 = snap.day === 1;
+  let mistakeLine = "";
+  if (isDay1) {
+    mistakeLine = `<p class="sum-mistakes">Mistakes: ${dm} &nbsp;⚠️ Heads up: the boss starts watching for mistakes from Day 2.</p>`;
+  } else if (dm > 0) {
+    const quip = dm > 3 ? " (You really enjoy the 1-on-1s, huh?)" : "";
+    mistakeLine = `<p class="sum-mistakes">Mistakes: ${dm}${quip}</p>`;
+  }
   app.innerHTML = `<div class="card"><h2>Day ${snap.day} done</h2>${standings()}
-    <p>Your career earnings: <b>${money(player.careerEarnings)}</b><br>Tasks completed: ${s.tasksCompleted}<br>
-    Mistakes: ${s.mistakesCount}<br>Risky calls: ${s.riskyChoicesCount}${player.fx?.stipend ? `<br>HR stipend: +$${STIPEND}` : ""}</p>
+    ${mistakeLine}
+    <p>Tasks completed: ${s.tasksCompleted}<br>Risky calls: ${s.riskyChoicesCount}<br>Career earnings: <b>${money(player.careerEarnings)}</b>${player.fx?.stipend ? `<br>HR stipend: +$${STIPEND}` : ""}</p>
     <button class="big" id="next">Visit the supply closet</button></div>`;
   document.getElementById("next").onclick = () => goStep("shop");
 }
